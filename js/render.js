@@ -3,16 +3,28 @@ import { MAP, TEAM_COLOR, ASSETS } from './data.js';
 
 const TAU = Math.PI * 2;
 
+// 반환값: 키 → { img, sx, sy, sw, sh } (시트면 해당 칸의 영역)
 export function loadAssets(onProgress) {
   const out = {};
-  const keys = Object.keys(ASSETS);
+  const keys = Object.keys(ASSETS).filter((k) => ASSETS[k]);
+  const srcs = [...new Set(keys.map((k) => ASSETS[k].src || ASSETS[k]))];
+  if (!srcs.length) return Promise.resolve(out);
   let done = 0;
-  return Promise.all(keys.map((k) => new Promise((res) => {
+  const imgs = {};
+  return Promise.all(srcs.map((src) => new Promise((res) => {
     const img = new Image();
-    img.onload = () => { out[k] = img; onProgress && onProgress(++done / keys.length); res(); };
-    img.onerror = () => { onProgress && onProgress(++done / keys.length); res(); };
-    img.src = ASSETS[k];
-  }))).then(() => out);
+    const fin = (ok) => { if (ok) imgs[src] = img; onProgress && onProgress(++done / srcs.length); res(); };
+    img.onload = () => fin(true); img.onerror = () => fin(false);
+    img.src = src;
+  }))).then(() => {
+    for (const k of keys) {
+      const a = ASSETS[k], img = imgs[a.src || a];
+      if (!img) continue;
+      if (a.grid) { const sw = img.width / a.grid[0], sh = img.height / a.grid[1]; out[k] = { img, sx: a.cell[0] * sw, sy: a.cell[1] * sh, sw, sh }; }
+      else out[k] = { img, sx: 0, sy: 0, sw: img.width, sh: img.height };
+    }
+    return out;
+  });
 }
 
 function rgba(hex, a) {
@@ -87,8 +99,8 @@ export class Renderer {
   drawGround(ctx) {
     const g = this.assets.ground;
     if (g && !this.pattern) {
-      this.pattern = ctx.createPattern(g, 'repeat');
-      const s = 640 / g.width;
+      this.pattern = ctx.createPattern(g.img, 'repeat');
+      const s = 640 / g.img.width;
       if (this.pattern.setTransform) this.pattern.setTransform(new DOMMatrix().scale(s, s));
     }
     ctx.fillStyle = this.pattern || '#141b27';
@@ -139,10 +151,10 @@ export class Renderer {
     ctx.fillStyle = color; ctx.fillRect(x - w / 2, y, w * Math.max(0, pct), h);
   }
 
-  sprite(ctx, img, x, y, size, rot) {
-    const s = size / Math.max(img.width, img.height);
+  sprite(ctx, a, x, y, size, rot) {
+    const s = size / Math.max(a.sw, a.sh);
     ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot);
-    ctx.drawImage(img, (-img.width * s) / 2, (-img.height * s) / 2, img.width * s, img.height * s);
+    ctx.drawImage(a.img, a.sx, a.sy, a.sw, a.sh, (-a.sw * s) / 2, (-a.sh * s) / 2, a.sw * s, a.sh * s);
     ctx.restore();
   }
 

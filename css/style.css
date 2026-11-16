@@ -24,11 +24,12 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink)
 #screen-select { justify-content: flex-start; padding: 3vh 3vw; overflow-y: auto; }
 #screen-select h2 { font-size: 30px; font-style: italic; letter-spacing: 0.1em; margin-bottom: 2vh; }
 #hero-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; width: min(1280px, 100%); flex: 1; min-height: 0; }
-.card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 380px; border: 2px solid var(--line); background: #0d1320 center top / cover no-repeat; cursor: pointer; overflow: hidden; transition: 0.18s; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
-.card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(5, 8, 14, 0.96) 72%); }
+.card { background-color: #0d1320; position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 380px; border: 2px solid var(--line); background-repeat: no-repeat; background-position: center top; background-size: cover; cursor: pointer; overflow: hidden; transition: 0.18s; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
+.card canvas.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.card::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, transparent 30%, rgba(5, 8, 14, 0.96) 72%); }
 .card:hover { transform: translateY(-4px); filter: brightness(1.1); }
 .card.on { border-color: var(--c); box-shadow: 0 0 34px -4px var(--c); }
-.card .in { position: relative; padding: 16px; }
+.card .in { position: relative; z-index: 2; padding: 16px; }
 .card .role { font-size: 12px; font-weight: 700; color: var(--c); letter-spacing: 0.12em; }
 .card h3 { font-size: 30px; font-style: italic; margin: 2px 0; }
 .card h3 small { font-size: 14px; font-style: normal; color: #aab6cc; margin-left: 8px; font-weight: 500; }
@@ -66,7 +67,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink)
 #respawn p { color: var(--red); font-weight: 700; margin-bottom: 4px; } #respawn b { font-size: 54px; font-style: italic; margin-right: 6px; }
 
 #bottom { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; align-items: stretch; background: var(--panel); border: 1px solid var(--line); padding: 10px 14px 10px 10px; clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%); padding-left: 24px; padding-right: 28px; }
-#me-portrait { width: 92px; border: 2px solid var(--c, #fff); background: #111827 center 12% / cover no-repeat; }
+#me-portrait { width: 92px; border: 2px solid var(--c, #fff); background-color: #111827; background-repeat: no-repeat; background-position: center 12%; background-size: cover; }
+#me-portrait canvas { width: 100%; height: 100%; display: block; }
 #me-info { display: flex; flex-direction: column; gap: 5px; min-width: 370px; }
 #me-info .row { display: flex; gap: 10px; align-items: baseline; font-size: 13px; color: #aab6cc; }
 #me-info .row b { font-size: 17px; color: #fff; font-style: italic; } #me-kda { margin-left: auto; }
@@ -76,7 +78,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink)
 .bar.hp em { position: absolute; inset: 0; text-align: center; font-size: 12px; font-style: normal; font-weight: 700; line-height: 16px; text-shadow: 0 1px 2px #000; }
 .bar.xp { height: 5px; } .bar.xp i { background: var(--gold); }
 #skills { display: flex; gap: 8px; margin-top: 3px; }
-.slot { position: relative; width: 62px; height: 62px; border: 2px solid var(--line); background: #131b2b center / cover no-repeat; overflow: hidden; }
+.slot { position: relative; width: 62px; height: 62px; border: 2px solid var(--line); background-color: #131b2b; background-repeat: no-repeat; background-position: center; background-size: cover; overflow: hidden; }
 .slot.ult { border-color: var(--gold); }
 .slot .glyph { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; font-weight: 900; color: var(--c); }
 .slot .cd { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(4, 6, 12, 0.8); }
@@ -98,3 +100,33 @@ table.score tr.me { background: rgba(255, 215, 106, 0.1); }
 #end-sub { color: #b9c6dc; }
 
 @media (max-width: 1100px) { #hero-cards { grid-template-columns: repeat(2, 1fr); } #minimap { width: 200px; height: auto; } }
+
+/* 터치 조작 */
+html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+#touch { position: absolute; inset: 0; }
+#joy-zone { position: absolute; left: 0; bottom: 0; width: 45%; height: 75%; pointer-events: auto; }
+#joy { position: absolute; width: 130px; height: 130px; margin: -65px 0 0 -65px; left: 110px; top: calc(100% - 110px); border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.06); }
+#joy i { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
+#tbtns { position: absolute; right: max(18px, env(safe-area-inset-right)); bottom: 18px; width: 250px; height: 230px; }
+.tb { white-space: pre-line; line-height: 1.15; padding: 0; position: absolute; pointer-events: auto; width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.45); background: rgba(12, 18, 30, 0.72); color: #fff; font: 700 13px inherit; font-family: inherit; overflow: hidden; }
+.tb.main { width: 104px; height: 104px; right: 0; bottom: 0; font-size: 18px; border-color: var(--c, #fff); }
+.tb.b1 { right: 118px; bottom: 4px; } .tb.b2 { right: 104px; bottom: 84px; } .tb.b3 { right: 30px; bottom: 124px; } .tb.b4 { right: 176px; bottom: 96px; width: 56px; height: 56px; font-size: 12px; }
+.tb.ult { border-color: var(--gold); }
+.tb.down { background: rgba(255, 255, 255, 0.3); }
+.tb.wait { opacity: 0.45; }
+.tb-mini { position: absolute; pointer-events: auto; top: 10px; width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: #fff; font-size: 18px; }
+#tb-pause { left: 10px; } #tb-score { left: 58px; }
+body.touch #bottom { transform: translateX(-50%) scale(0.62); transform-origin: bottom center; bottom: 4px; }
+body.touch #skills { display: none; }
+body.touch #me-info { min-width: 300px; }
+body.touch #minimap { top: 58px; bottom: auto; left: 10px; right: auto; width: 150px; height: auto; }
+body.touch #top { transform: translateX(-50%) scale(0.8); transform-origin: top center; }
+body.touch #feed { top: 8px; right: 8px; } body.touch #feed div { font-size: 11px; padding: 4px 8px; }
+body.touch .keys { display: none; }
+@media (max-height: 520px) {
+  #screen-select { padding: 8px 12px; } #screen-select h2 { font-size: 18px; margin-bottom: 6px; }
+  #hero-cards { grid-template-columns: repeat(4, 1fr); gap: 8px; } .card { min-height: 0; } .card ul, .card p { display: none; } .card h3 { font-size: 20px; } .card h3 small { display: block; margin: 0; font-size: 11px; }
+  .select-foot { margin-top: 8px; } .btn.primary { padding: 10px 30px; font-size: 15px; }
+  .sub { margin: 10px 0 18px; font-size: 14px; }
+}
+@media (orientation: portrait) { body.touch::after { content: "화면을 가로로 돌려 주세요"; position: fixed; z-index: 50; top: 0; left: 0; right: 0; padding: 10px; text-align: center; background: var(--gold); color: #1a1205; font-weight: 700; font-size: 14px; pointer-events: none; } }

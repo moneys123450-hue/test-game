@@ -1,0 +1,130 @@
+[
+ {
+  "id": "heroes",
+  "keys": [
+   "hero_kai",
+   "hero_lyra",
+   "hero_brom",
+   "hero_sera"
+  ],
+  "grid": [
+   2,
+   2
+  ],
+  "params": {
+   "model": "gpt_image_2_6",
+   "quality": "medium",
+   "resolution": "2k",
+   "aspect_ratio": "1:1",
+   "background": "transparent",
+   "output_format": "webp"
+  },
+  "prompt": "A sprite sheet laid out as an exact 2x2 grid of four equal square cells. Each cell holds ONE top-down 2D game character seen from directly overhead (true bird's-eye orthographic view, camera straight above looking down, we see the top of the head and both shoulders). Every character faces the RIGHT side of the image with its weapon extended to the right. Top-left: a swordsman with short spiky black hair with a cyan streak, dark armored jacket with glowing cyan lines, long glowing cyan energy katana. Top-right: a female gunslinger with a long orange ponytail trailing to the left, white and orange combat jacket, two glowing orange pistols held forward. Bottom-left: a huge heavy guardian in bulky bronze-and-steel power armor with very wide pauldrons and a glowing yellow reactor on the back, massive war hammer forward and a tower shield on the other arm. Bottom-right: a female mage with long silver-violet hair, dark purple and white techno-robe spread around her with glowing violet runes, crystal staff with a glowing violet orb forward. Clean cel-shaded game asset style with bold dark outlines, fully transparent background, no ground, no shadows, no text, no grid lines, no borders. Every item is centered in its own cell and stays completely inside it with generous empty padding on all sides; nothing crosses into a neighbouring cell."
+ },
+ {
+  "id": "units",
+  "keys": [
+   "tower0",
+   "core0",
+   "minion0",
+   "tower1",
+   "core1",
+   "minion1"
+  ],
+  "grid": [
+   3,
+   2
+  ],
+  "params": {
+   "model": "gpt_image_2_6",
+   "quality": "medium",
+   "resolution": "2k",
+   "aspect_ratio": "3:2",
+   "background": "transparent",
+   "output_format": "webp"
+  },
+  "prompt": "A sprite sheet laid out as an exact grid of 3 columns and 2 rows, six equal square cells, all objects seen from directly overhead (top-down bird's-eye view). The top row is the BLUE team, the bottom row is the RED team, and each column shows the same design in both rows with only the glow colour changed. Column 1: a futuristic defense turret tower on a round armored metal base, symmetrical circular design with a glowing energy crystal core in the center. Column 2: a large headquarters energy core, hexagonal fortified platform with six pylons around a huge glowing crystal reactor. Column 3: a small compact combat robot drone with a rounded armored shell and two short blade arms pointing to the RIGHT side, glowing visor. Top row uses glowing blue energy with steel and dark navy plating; bottom row uses glowing red energy with steel and dark crimson plating. Clean cel-shaded game asset style with bold dark outlines, fully transparent background, no ground, no shadows, no text, no grid lines, no borders. Every item is centered in its own cell and stays completely inside it with generous empty padding on all sides; nothing crosses into a neighbouring cell."
+ },
+ {
+  "id": "icons",
+  "keys": [
+   "icon_kai_0",
+   "icon_kai_1",
+   "icon_kai_2",
+   "icon_kai_3",
+   "icon_lyra_0",
+   "icon_lyra_1",
+   "icon_lyra_2",
+   "icon_lyra_3",
+   "icon_brom_0",
+   "icon_brom_1",
+   "icon_brom_2",
+   "icon_brom_3",
+   "icon_sera_0",
+   "icon_sera_1",
+   "icon_sera_2",
+   "icon_sera_3"
+  ],
+  "grid": [
+   4,
+   4
+  ],
+  "params": {
+   "model": "gpt_image_2_6",
+   "quality": "medium",
+   "resolution": "2k",
+   "aspect_ratio": "1:1",
+   "output_format": "webp"
+  },
+  "prompt": "A sheet of 16 square game ability icons laid out as an exact 4x4 grid of equal cells. Each icon fills its cell edge to edge on a dark background, with no gaps, no borders, no frames and no text. Stylized glossy cel-shaded MOBA ability icon style. Row 1, cyan energy sword theme: a diagonal cyan sword slash arc; a cyan dashing streak with a blade tip and speed lines; a circular cyan whirlwind of spinning blades; a brilliant straight cyan flash cut splitting the frame. Row 2, orange gunfire theme: a single glowing orange bullet with muzzle flash; a long orange piercing beam passing through a target ring; an orange flash grenade bursting with a shockwave; a storm of many orange bullets spraying in a fan. Row 3, golden heavy armor theme: a golden war hammer swinging; a tower shield charging forward with impact lines; a glowing golden protective dome around an armored silhouette; the ground shattering in a circular golden shockwave. Row 4, violet arcane theme: a glowing violet magic orb with a trail; an icy blue-violet frost nova burst of crystals; a violet teleport blink with two fading silhouettes and sparkles; a huge blazing violet meteor falling onto a target circle."
+ },
+ {
+  "id": "portraits",
+  "keys": [
+   "portrait_kai",
+   "portrait_lyra",
+   "portrait_brom",
+   "portrait_sera"
+  ],
+  "grid": [
+   2,
+   2
+  ],
+  "params": {
+   "model": "gpt_image_2_6",
+   "quality": "medium",
+   "resolution": "2k",
+   "aspect_ratio": "3:4",
+   "output_format": "webp"
+  },
+  "prompt": "Four original character splash arts for a sci-fi fantasy action arena game, laid out as an exact 2x2 grid of four equal portrait panels with no borders, no gaps and no text. Each panel is a waist-up portrait with the face in the upper third, stylized cel-shaded anime-inspired game illustration, dramatic neon rim lighting, dark futuristic ruined-city background. Top-left: KAI, a young male swordsman with short spiky black hair with a cyan streak, sleek dark armored jacket with glowing cyan lines, holding a long cyan energy katana, cyan sparks. Top-right: LYRA, a confident female gunslinger with a long orange ponytail, visor goggles on her forehead, white and orange combat jacket, two glowing orange pistols, orange embers. Bottom-left: BROM, a huge bearded male guardian in heavy bronze-and-steel power armor with a glowing yellow reactor core, war hammer and tower shield, golden dust. Bottom-right: SERA, an elegant female mage with long silver-violet hair, dark purple and white techno-robe with glowing violet runes, crystal staff, conjuring a violet star orb, violet particles."
+ },
+ {
+  "id": "ground",
+  "keys": [
+   "ground"
+  ],
+  "params": {
+   "model": "gpt_image_2_6",
+   "quality": "medium",
+   "resolution": "1k",
+   "aspect_ratio": "1:1",
+   "output_format": "webp"
+  },
+  "prompt": "Seamless tileable top-down game ground texture: dark futuristic city plaza floor made of large worn metal-and-concrete panels with subtle seams, faint scratches, tiny dim teal circuit lines, a few small cracks. Flat even lighting, low contrast, dark navy-gray tone, no objects, no perspective, no shadows, no text. Edges must tile seamlessly."
+ },
+ {
+  "id": "title",
+  "keys": [
+   "title"
+  ],
+  "params": {
+   "model": "gpt_image_2_6",
+   "quality": "medium",
+   "resolution": "2k",
+   "aspect_ratio": "16:9",
+   "output_format": "webp"
+  },
+  "prompt": "Key art background for a sci-fi fantasy action arena game title screen: a vast ruined futuristic city arena at dusk split into two sides, left side lit by glowing blue energy towers and right side lit by glowing red energy towers, a shattered plaza in the middle with floating debris and energy sparks, dramatic clouds, cinematic wide shot, stylized cel-shaded anime-inspired painting. Center area kept darker and uncluttered for a logo. No characters, no text, no logo."
+ }
+]

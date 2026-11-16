@@ -186,18 +186,5 @@ export const HERO_ORDER = ['kai', 'lyra', 'brom', 'sera'];
 export const SLOT_ORDER = ['lmb', 'rmb', 'q', 'e', 'space'];
 export const SLOT_LABEL = { lmb: '좌클릭', rmb: '우클릭', q: 'Q', e: 'E', space: 'Space' };
 
-export const ASSETS = {
-  ground: 'assets/ground.webp',
-  title: 'assets/title.webp',
-  tower0: 'assets/tower_blue.webp',
-  tower1: 'assets/tower_red.webp',
-  core0: 'assets/core_blue.webp',
-  core1: 'assets/core_red.webp',
-  minion0: 'assets/minion_blue.webp',
-  minion1: 'assets/minion_red.webp',
-  ...Object.fromEntries(HERO_ORDER.flatMap((h) => [
-    [`hero_${h}`, `assets/hero_${h}.webp`],
-    [`portrait_${h}`, `assets/portrait_${h}.webp`],
-    [`icons_${h}`, `assets/icons_${h}.webp`],
-  ])),
-};
+// 이미지 주소는 js/assets.js 에서 관리한다 (없는 키는 도형으로 대체 렌더링)
+export { ASSETS, cssBg } from './assets.js';
