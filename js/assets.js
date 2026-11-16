@@ -1,14 +1,13 @@
 // Higgsfield 로 생성한 이미지 목록. 키가 없거나 로드에 실패하면 렌더러가 도형으로 대체한다.
 // 값 형식:  '주소'  또는  { src: '주소', grid: [열, 행], cell: [x, y] }  (한 장에 여러 개를 담은 시트의 한 칸)
 // 저장소에 파일로 옮긴 뒤에는 주소를 'assets/파일명' 같은 상대 경로로 바꾸면 된다.
-// 키 규칙: hero_<id> 탑다운 스프라이트(오른쪽을 바라봄) / portrait_<id> 초상화 / icon_<id>_<0~3> 스킬 아이콘
-//          tower0·tower1·core0·core1·minion0·minion1 (0=블루, 1=레드) / ground 바닥 타일 / title 타이틀 배경
+// 키 규칙: portrait_<id> 초상화 / icon_<id>_<0~3> 스킬 아이콘 / title 타이틀 배경 / ground 3D 바닥 텍스처
+// (캐릭터·건물·미니언은 이미지가 아니라 js/models.js 가 3D 로 만든다)
 // 생성 프롬프트는 tools/asset-prompts.json 에 있다.
 const CDN = 'https://d8j0ntlcm91z4.cloudfront.net/user_3LwojqBAWQYRiqw0VgFcSDJLR64/';
 const sheet = (file, cols, rows, keys) => Object.fromEntries(keys.map((k, i) => [k, { src: CDN + file, grid: [cols, rows], cell: [i % cols, Math.floor(i / cols)] }]).filter(([k]) => k));
 
 export const ASSETS = {
-  hero_kai: CDN + 'hf_20261116_091153_95e86984-b2b5-4867-a6dd-e86c28b75c57.png',
   portrait_sera: CDN + 'hf_20261116_113820_08ba2ba2-a81c-488f-a216-cdc71e1b1c0e.png',
 };
 
@@ -20,3 +19,28 @@ export function cssBg(key) {
   const [c, r] = a.grid, [x, y] = a.cell;
   return { backgroundImage: `url(${a.src})`, backgroundSize: `${c * 100}% ${r * 100}%`, backgroundPosition: `${c > 1 ? (x / (c - 1)) * 100 : 0}% ${r > 1 ? (y / (r - 1)) * 100 : 0}%` };
 }
+
+// 반환값: 키 → { img, sx, sy, sw, sh } (시트면 해당 칸의 영역)
+export function loadAssets(onProgress) {
+  const out = {};
+  const keys = Object.keys(ASSETS).filter((k) => ASSETS[k]);
+  const srcs = [...new Set(keys.map((k) => ASSETS[k].src || ASSETS[k]))];
+  if (!srcs.length) return Promise.resolve(out);
+  let done = 0;
+  const imgs = {};
+  return Promise.all(srcs.map((src) => new Promise((res) => {
+    const img = new Image();
+    const fin = (ok) => { if (ok) imgs[src] = img; onProgress && onProgress(++done / srcs.length); res(); };
+    img.onload = () => fin(true); img.onerror = () => fin(false);
+    img.src = src;
+  }))).then(() => {
+    for (const k of keys) {
+      const a = ASSETS[k], img = imgs[a.src || a];
+      if (!img) continue;
+      if (a.grid) { const sw = img.width / a.grid[0], sh = img.height / a.grid[1]; out[k] = { img, sx: a.cell[0] * sw, sy: a.cell[1] * sh, sw, sh }; }
+      else out[k] = { img, sx: 0, sy: 0, sw: img.width, sh: img.height };
+    }
+    return out;
+  });
+}
+

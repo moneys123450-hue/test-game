@@ -58,12 +58,12 @@ export class World {
   addHero(r, idx) {
     const def = HEROES[r.hero];
     const core = MAP.cores[r.team];
-    const sx = core.x + (r.team === 0 ? -150 : 150);
+    const sx = core.x + (r.team === 0 ? 240 : -240); // 코어 앞(적 방향)에서 시작
     const sy = core.y + (idx - 1) * 120;
     const h = Object.assign(this.base('hero', r.team, sx, sy, def.r, def.hp, def.atk), {
       def, name: r.name || def.name, isPlayer: !!r.isPlayer, lane: r.lane || 'top', spawn: { x: sx, y: sy },
       level: 1, xp: 0, speed: def.speed, cds: {}, lockT: 0, lockMove: false, dash: null, respawnT: 0, lifeId: 1,
-      k: 0, d: 0, a: 0, damagers: new Map(), aggroT: -99, lastCombatT: -99,
+      k: 0, d: 0, a: 0, damagers: new Map(), aggroT: -99, lastCombatT: -99, castT: -99, castSlot: null, deathT: -99,
       intent: { mx: 0, my: 0, aimX: sx + (r.team === 0 ? 100 : -100), aimY: sy, cast: {} },
       ai: r.isPlayer ? null : { thinkT: this.rand() * 0.3, mode: 'advance', target: null, retreat: false, strafe: 1, strafeT: 0, stuckT: 0, lastX: sx, lastY: sy, sideT: 0 },
     });
@@ -174,7 +174,7 @@ export class World {
       const near = this.heroes.filter((h) => h.alive && h.team === enemyTeam && dist(h, tgt) < RULES.xpShareRadius);
       for (const h of near) this.giveXp(h, RULES.xpMinion / Math.sqrt(near.length));
     } else if (tgt.kind === 'hero') {
-      tgt.d++; tgt.lifeId++; tgt.dash = null; tgt.buffs = []; tgt.slows = []; tgt.stunT = 0; tgt.lockT = 0;
+      tgt.d++; tgt.lifeId++; tgt.deathT = this.time; tgt.dash = null; tgt.buffs = []; tgt.slows = []; tgt.stunT = 0; tgt.lockT = 0;
       tgt.respawnT = RULES.respawn(tgt.level);
       this.kills[enemyTeam]++;
       const killer = src && src.kind === 'hero' ? src : null;
@@ -202,6 +202,7 @@ export class World {
   cast(h, slot) {
     const sk = h.def.skills[slot];
     h.cds[slot] = sk.cd; h.lockT = sk.lock; h.lockMove = !!sk.move;
+    h.castT = this.time; h.castSlot = slot; // 렌더러의 공격 동작용
     if (sk.ult) { this.addFx({ type: 'ultcast', follow: h.id, x: h.x, y: h.y, color: h.def.color, dur: 0.7 }); this.events.push({ type: 'ult', name: h.name, skill: sk.name, team: h.team }); }
     for (const eff of sk.effects) {
       const rep = eff.repeat || { times: 1, interval: 0 };

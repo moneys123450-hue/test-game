@@ -1,12 +1,12 @@
 # ECLIPSE ARENA
 
-브라우저에서 바로 실행되는 3 vs 3 액션 AOS. 빌드 과정 없이 정적 파일만으로 동작한다.
+브라우저에서 바로 실행되는 3 vs 3 3D 액션 AOS (3인칭 숄더뷰). 빌드 과정 없이 정적 파일만으로 동작한다.
 
 ## 조작
 | 입력 | 동작 |
 |---|---|
 | WASD | 이동 |
-| 마우스 | 조준 |
+| 마우스 | 시점 회전·조준 (화면을 클릭하면 시점이 고정된다) |
 | 좌클릭 / 우클릭 | 기본 공격 / 스킬 1 |
 | Q / E | 스킬 2 / 궁극기 |
 | Space | 회피(무적) |
@@ -20,14 +20,15 @@
 ## 구조
 | 파일 | 역할 | 성격 |
 |---|---|---|
-| `js/data.js` | 영웅·스킬·맵·규칙 수치 | 데이터 (밸런스 조정은 여기만) |
-| `js/world.js` | 시뮬레이션 + 스킬 효과 인터프리터 | 범용 엔진 (DOM 비의존) |
+| `js/data.js` | 영웅·스킬·맵·규칙 수치, 3D 외형 명세 | 데이터 (밸런스·외형 조정은 여기만) |
+| `js/world.js` | 시뮬레이션 + 스킬 효과 인터프리터 | 범용 엔진 (DOM·렌더러 비의존) |
 | `js/ai.js` | 봇 조종 | 규칙 기반 자동화 (스킬 메타데이터 참조) |
-| `js/render.js` | 캔버스 렌더링, 미니맵 | 에셋 없으면 도형으로 대체 |
+| `js/models.js` | 3D 모델 생성과 동작 | 외형 명세를 해석해 도형으로 조립 |
+| `js/render3d.js` | Three.js 장면, 3인칭 카메라, 이펙트 | |
 | `js/main.js` | 화면 전환·입력·HUD·루프 | |
 | `tools/sim.mjs` | 봇끼리 한 판을 돌리는 헤드리스 검증 | `node tools/sim.mjs [seed] [난이도 0~2]` |
 
-영웅 추가: `data.js`의 `HEROES`에 항목을 넣고 `HERO_ORDER`에 id를 추가하면 된다. 스킬은 `arc / projectile / dash / aoe / blink / buff` 효과의 조합으로 정의한다.
+영웅 추가: `data.js`의 `HEROES`에 항목(스킬, `look` 외형)을 넣고 `HERO_ORDER`에 id를 추가하면 된다. 스킬은 `arc / projectile / dash / aoe / blink / buff` 효과의 조합으로 정의한다.
 
 ## 로컬 실행
 ```
@@ -36,7 +37,7 @@ python3 -m http.server 8000
 ES 모듈을 쓰므로 `index.html`을 파일로 직접 열면 동작하지 않는다.
 
 ## 에셋
-`assets/` 의 이미지는 Higgsfield로 생성했다. 파일명 규칙은 `data.js`의 `ASSETS` 참고.
+초상화·아이콘·배경 이미지는 Higgsfield로 생성하며 주소는 `js/assets.js`에 있다. 3D 엔진은 Three.js (`vendor/`, MIT).
 
 ## 인수인계
 작업을 이어받을 때는 `HANDOFF.md` 를 먼저 읽는다 (캐릭터 설정, 이미지 프롬프트 양식, 진행 현황).

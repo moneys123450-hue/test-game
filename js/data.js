@@ -7,6 +7,7 @@
 //   aoe        : 원형 범위 (at: self | cursor | front, delay 로 예고)
 //   blink      : 순간이동
 //   buff       : 지속 능력치 변화 / 회복
+// look: 3D 모델 외형 명세 (js/models.js 가 해석한다. 영웅별 모델 코드를 따로 쓰지 않는다)
 // 공통 필드: t(시전 후 지연 초), dmg:[고정, 공격력계수], stun, slow:[배율, 초], knock
 // repeat:{times, interval} 를 붙이면 같은 효과를 반복 실행한다.
 
@@ -85,6 +86,7 @@ export const HEROES = {
   kai: {
     id: 'kai', name: '카이', title: '섬광의 검사', role: '근접 돌격', color: '#35e0ff',
     hp: 1550, atk: 96, speed: 335, r: 27, hpLv: 135, atkLv: 9, aiRange: 110, sprite: 150,
+    look: { scale: 1.0, skin: '#e8b89a', hair: { color: '#1b1f2a', style: 'spiky', streak: '#35e0ff' }, torso: '#2f3a52', legs: '#222a3a', accent: '#35e0ff', weapon: 'katana', anim: 'slash' },
     blurb: '빠른 연속 베기와 돌진으로 적진을 파고드는 근접 딜러.',
     skills: {
       lmb: { id: 'kai_lmb', name: '연참', cd: 0.42, lock: 0.16, icon: 0,
@@ -110,6 +112,7 @@ export const HEROES = {
   lyra: {
     id: 'lyra', name: '리라', title: '쌍권총의 추적자', role: '원거리 딜러', color: '#ff9a3c',
     hp: 1180, atk: 82, speed: 322, r: 25, hpLv: 100, atkLv: 8.5, aiRange: 560, sprite: 150,
+    look: { scale: 0.96, skin: '#f0c4a8', hair: { color: '#ff8a2a', style: 'ponytail' }, torso: '#e9edf2', legs: '#2a2f3a', accent: '#ff9a3c', weapon: 'pistols', anim: 'shoot' },
     blurb: '먼 거리에서 꾸준히 쏘고, 탄막으로 전투를 마무리하는 사수.',
     skills: {
       lmb: { id: 'lyra_lmb', name: '속사', cd: 0.36, lock: 0.08, move: true, icon: 0,
@@ -135,6 +138,7 @@ export const HEROES = {
   brom: {
     id: 'brom', name: '브롬', title: '강철의 수호자', role: '탱커', color: '#ffd24a',
     hp: 2350, atk: 86, speed: 292, r: 33, hpLv: 190, atkLv: 7.5, aiRange: 120, sprite: 180,
+    look: { scale: 1.28, bulk: 1.45, skin: '#c99878', hair: { color: '#5a3a22', style: 'beard' }, torso: '#8a6a3a', legs: '#4a4f5a', accent: '#ffd24a', pauldrons: '#b08a4a', weapon: 'hammer_shield', anim: 'smash' },
     blurb: '두꺼운 방어와 군중 제어로 아군의 진입로를 여는 선봉.',
     skills: {
       lmb: { id: 'brom_lmb', name: '망치 강타', cd: 0.66, lock: 0.28, icon: 0,
@@ -159,6 +163,7 @@ export const HEROES = {
   sera: {
     id: 'sera', name: '세라', title: '별빛의 마도사', role: '마법사', color: '#b98cff',
     hp: 1080, atk: 92, speed: 316, r: 25, hpLv: 92, atkLv: 9.5, aiRange: 540, sprite: 150,
+    look: { scale: 0.98, skin: '#f2d2c4', hair: { color: '#cfc4f2', style: 'long' }, torso: '#4a2f80', robe: '#3a2468', accent: '#b98cff', weapon: 'staff', anim: 'cast', hover: true },
     blurb: '광역 마법과 점멸로 전장을 지배하지만 몸이 약한 마법사.',
     skills: {
       lmb: { id: 'sera_lmb', name: '별빛 탄', cd: 0.5, lock: 0.1, move: true, icon: 0,
@@ -187,4 +192,4 @@ export const SLOT_ORDER = ['lmb', 'rmb', 'q', 'e', 'space'];
 export const SLOT_LABEL = { lmb: '좌클릭', rmb: '우클릭', q: 'Q', e: 'E', space: 'Space' };
 
 // 이미지 주소는 js/assets.js 에서 관리한다 (없는 키는 도형으로 대체 렌더링)
-export { ASSETS, cssBg } from './assets.js';
+export { ASSETS, cssBg, loadAssets } from './assets.js';

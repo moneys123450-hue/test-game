@@ -1,15 +1,18 @@
-// 화면 전환, 입력, HUD, 메인 루프
-import { HEROES, HERO_ORDER, SLOT_ORDER, SLOT_LABEL, TEAM_NAME, cssBg } from './data.js';
+// 화면 전환, 입력(키보드·마우스 포인터 잠금·터치), HUD, 메인 루프
+import { HEROES, HERO_ORDER, SLOT_ORDER, SLOT_LABEL, TEAM_NAME, RULES, ASSETS, cssBg, loadAssets } from './data.js';
 import { World } from './world.js';
 import { updateBot } from './ai.js';
-import { Renderer, loadAssets } from './render.js';
+import { Renderer3D } from './render3d.js';
+import { drawMinimap } from './minimap.js';
 
 const $ = (id) => document.getElementById(id);
 const STEP = 1 / 60;
 const state = { assets: {}, hero: 'kai', difficulty: 1, world: null, player: null, renderer: null, paused: false, running: false, acc: 0, last: 0, endT: 0 };
 const keys = new Set();
-const mouse = { x: innerWidth / 2, y: innerHeight / 2, l: false, r: false };
-const touch = { on: false, joy: null, btn: {}, score: false };
+const mouse = { l: false, r: false };
+const touch = { on: false, joy: null, btn: {}, look: null, score: false };
+const view = $('view');
+window.__game = state; // 디버깅·자동 검증용
 
 // ───────── 화면 ─────────
 function show(id) {
@@ -45,11 +48,19 @@ function paintArt() {
   }
 }
 
-// ───────── 게임 시작 ─────────
+// ───────── 게임 시작 / 데모 ─────────
+const pick = (pool, n) => { const p = [...pool], out = []; while (out.length < n && p.length) out.push(p.splice(Math.floor(Math.random() * p.length), 1)[0]); return out; };
+
+// 타이틀·선택 화면 뒤에서 봇끼리 싸우는 전투를 보여준다
+function enterDemo() {
+  const a = pick(HERO_ORDER, 3), b = pick(HERO_ORDER, 3);
+  const w = new World({ roster: [...a.map((hero, i) => ({ hero, team: 0, lane: i === 1 ? 'bot' : 'top' })), ...b.map((hero, i) => ({ hero, team: 1, lane: i === 1 ? 'top' : 'bot' }))] });
+  state.world = w; state.player = w.heroes[0]; state.running = false; state.paused = false;
+  state.renderer.setWorld(w);
+}
+
 function startGame() {
-  const pick = (pool, n, rnd) => { const p = [...pool]; const out = []; while (out.length < n && p.length) out.push(p.splice(Math.floor(rnd() * p.length), 1)[0]); return out; };
-  const allies = pick(HERO_ORDER.filter((h) => h !== state.hero), 2, Math.random);
-  const foes = pick(HERO_ORDER, 3, Math.random);
+  const allies = pick(HERO_ORDER.filter((h) => h !== state.hero), 2), foes = pick(HERO_ORDER, 3);
   const roster = [
     { hero: state.hero, team: 0, isPlayer: true, lane: 'top' },
     { hero: allies[0], team: 0, lane: 'top' }, { hero: allies[1], team: 0, lane: 'bot' },
@@ -57,13 +68,16 @@ function startGame() {
   ];
   state.world = new World({ roster, difficulty: state.difficulty });
   state.player = state.world.heroes[0];
-  state.renderer.cam.x = state.player.x; state.renderer.cam.y = state.player.y;
+  state.renderer.setWorld(state.world);
+  state.renderer.view.yaw = 0; state.renderer.view.pitch = 0.3;
   state.paused = false; state.running = true; state.acc = 0; state.endT = 0;
+  mouse.l = mouse.r = false;
   buildHud();
   $('feed').innerHTML = '';
   $('pause').classList.add('hidden');
   show('hud');
   announce('전투 개시!', '#ffd76a');
+  lockPointer();
 }
 
 function buildHud() {
@@ -97,12 +111,10 @@ function buildHud() {
   for (const t of [0, 1]) $('tw' + t).innerHTML = '<i></i>'.repeat(4);
 }
 
-let annTimer = 0;
 function announce(text, color = '#fff') {
   const a = $('announce');
   a.textContent = text; a.style.color = color;
   a.classList.remove('show'); void a.offsetWidth; a.classList.add('show');
-  clearTimeout(annTimer);
 }
 
 function feed(html) {
@@ -119,13 +131,13 @@ function handleEvents() {
   for (const e of w.events) {
     if (e.type === 'kill') {
       feed(`<span class="t${e.killerTeam}">${e.killer}</span> ▸ <span class="t${e.victimTeam}">${e.victim}</span> 처치`);
-      if (e.victim === p.name && e.victimTeam === p.team && !p.alive) state.renderer.cam.shake = 20;
+      if (e.victim === p.name && e.victimTeam === p.team && !p.alive) state.renderer.shake = 0.6;
     } else if (e.type === 'tower') {
       announce(`${TEAM_NAME[e.team]} 팀 ${e.tier === 1 ? '외곽' : '내곽'} 타워 파괴!`, e.team === p.team ? '#ff4d5e' : '#3fb6ff');
     } else if (e.type === 'levelup') {
       feed(`<span class="t${p.team}">레벨 ${e.level}</span> 달성`);
     } else if (e.type === 'over') {
-      state.endT = 2.2;
+      state.endT = 2.6;
       announce(e.winner === p.team ? '적 코어 파괴!' : '아군 코어가 파괴되었습니다', e.winner === p.team ? '#ffd76a' : '#ff4d5e');
     }
   }
@@ -152,66 +164,35 @@ function updateHud() {
   $('me-kda').textContent = `${p.k} / ${p.d} / ${p.a}`;
   $('me-hp').style.width = `${(p.hp / p.maxHp) * 100}%`;
   $('me-hp-t').textContent = `${Math.ceil(p.hp)} / ${Math.round(p.maxHp)}`;
-  $('me-xp').style.width = p.level >= 12 ? '100%' : `${(p.xp / (90 + p.level * 45)) * 100}%`;
+  $('me-xp').style.width = p.level >= RULES.maxLevel ? '100%' : `${(p.xp / RULES.xpNeed(p.level)) * 100}%`;
   for (const el of $('skills').children) {
     const slot = el.dataset.slot, cd = p.cds[slot], max = p.def.skills[slot].cd;
     el.children[el.children.length - 3].style.height = cd > 0 ? `${Math.min(100, (cd / max) * 100)}%` : '0';
     el.children[el.children.length - 2].textContent = cd > 0.5 ? Math.ceil(cd) : '';
     el.classList.toggle('ready', cd <= 0);
   }
-  const rs = $('respawn');
-  rs.classList.toggle('hidden', p.alive || w.over !== null);
+  $('respawn').classList.toggle('hidden', p.alive || w.over !== null);
   if (!p.alive) $('respawn-t').textContent = Math.max(1, Math.ceil(p.respawnT));
-  const sb = $('scoreboard');
   const showSb = keys.has('Tab') || touch.score;
-  sb.classList.toggle('hidden', !showSb);
-  if (showSb) sb.innerHTML = scoreTable(w, p);
+  $('scoreboard').classList.toggle('hidden', !showSb);
+  if (showSb) $('scoreboard').innerHTML = scoreTable(w, p);
+  $('crosshair').classList.toggle('hidden', !p.alive);
+  $('lock-hint').classList.toggle('hidden', touch.on || document.pointerLockElement === view);
+  drawMinimap($('minimap'), w, p, state.renderer.view.yaw);
 }
 
 function endGame() {
   const w = state.world, p = state.player, win = w.over === p.team;
-  state.running = false;
   $('end-title').textContent = win ? '승리' : '패배';
   $('end-title').className = win ? 'win' : 'lose';
   $('end-sub').textContent = `경기 시간 ${fmtTime(w.time)} · 블루 ${w.kills[0]} : ${w.kills[1]} 레드`;
   $('end-table').innerHTML = scoreTable(w, p);
+  if (document.pointerLockElement) document.exitPointerLock();
   show('screen-end');
+  enterDemo();
 }
 
-// ───────── 루프 ─────────
-function frame(now) {
-  requestAnimationFrame(frame);
-  const dt = Math.min(0.1, (now - state.last) / 1000 || 0);
-  state.last = now;
-  const w = state.world, r = state.renderer;
-  if (!w) return;
-  if (state.running && !state.paused) {
-    const p = state.player;
-    if (touch.on) touchIntent(w, p); else {
-      const aim = r.screenToWorld(mouse.x, mouse.y);
-      const it = p.intent;
-      it.mx = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
-      it.my = (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) - (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0);
-      it.aimX = aim.x; it.aimY = aim.y;
-      it.cast = { lmb: mouse.l, rmb: mouse.r, q: keys.has('KeyQ'), e: keys.has('KeyE'), space: keys.has('Space') };
-    }
-    state.acc += dt;
-    while (state.acc >= STEP) {
-      for (const h of w.heroes) if (h.ai) updateBot(w, h, STEP);
-      w.step(STEP);
-      state.acc -= STEP;
-    }
-    handleEvents();
-    if (w.over !== null) { state.endT -= dt; if (state.endT <= 0) endGame(); }
-    // 사망 시에는 처치한 곳 대신 아군 코어 쪽을 비춘다
-    r.follow(p.alive ? p : (w.over !== null ? w.cores[1 - w.over] : p), touch.on ? { x: r.vw / 2, y: r.vh / 2 } : mouse, dt);
-    updateHud();
-  }
-  r.draw(w, state.player);
-}
-
-// ───────── 터치 입력 ─────────
-// 왼쪽: 가상 조이스틱. 오른쪽: 스킬 버튼 — 누르고 있으면 가까운 적을 자동 조준하고, 끌면 그 방향/거리로 직접 조준한다.
+// ───────── 입력 → intent ─────────
 function autoTarget(w, p) {
   let best = null, bs = Infinity;
   for (const u of w.units) {
@@ -224,31 +205,91 @@ function autoTarget(w, p) {
   return best;
 }
 
-function touchIntent(w, p) {
-  const it = p.intent;
-  it.mx = 0; it.my = 0;
-  if (touch.joy) {
-    const dx = touch.joy.x - touch.joy.ox, dy = touch.joy.y - touch.joy.oy, d = Math.hypot(dx, dy);
-    if (d > 10) { it.mx = dx / d; it.my = dy / d; }
-  }
+function playerIntent(w, p) {
+  const r = state.renderer, b = r.basis(), it = p.intent;
+  let f = 0, s = 0;
   it.cast = {};
-  let aim = null;
-  for (const slot in touch.btn) {
-    const b = touch.btn[slot];
-    it.cast[slot] = true;
-    const dx = b.x - b.sx, dy = b.y - b.sy, d = Math.hypot(dx, dy);
-    if (d > 18) { const reach = Math.min(1, d / 90) * 780; aim = { x: p.x + (dx / d) * reach, y: p.y + (dy / d) * reach }; }
+  if (touch.on) {
+    if (touch.joy) { const dx = touch.joy.x - touch.joy.ox, dy = touch.joy.y - touch.joy.oy, d = Math.hypot(dx, dy); if (d > 10) { s = dx / d; f = -dy / d; } }
+    let manual = false;
+    for (const slot in touch.btn) { it.cast[slot] = true; if (touch.btn[slot].moved > 14) manual = true; }
+    for (const el of document.querySelectorAll('.tb')) el.classList.toggle('wait', p.cds[el.dataset.slot] > 0.3);
+    const t = !manual && Object.keys(touch.btn).length ? autoTarget(w, p) : null; // 버튼만 누르면 가까운 적 자동 조준
+    const aim = t ? { x: t.x + (t.vx || 0) * 0.15, y: t.y + (t.vy || 0) * 0.15 } : r.aimPoint(p);
+    it.aimX = aim.x; it.aimY = aim.y;
+  } else {
+    f = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+    s = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+    const aim = r.aimPoint(p);
+    it.aimX = aim.x; it.aimY = aim.y;
+    it.cast = { lmb: mouse.l, rmb: mouse.r, q: keys.has('KeyQ'), e: keys.has('KeyE'), space: keys.has('Space') };
   }
-  if (!aim) {
-    const t = autoTarget(w, p);
-    if (t) aim = { x: t.x + (t.vx || 0) * 0.15, y: t.y + (t.vy || 0) * 0.15 };
-    else if (it.mx || it.my) aim = { x: p.x + it.mx * 300, y: p.y + it.my * 300 };
-    else aim = { x: p.x + Math.cos(p.face) * 300, y: p.y + Math.sin(p.face) * 300 };
-  }
-  it.aimX = aim.x; it.aimY = aim.y;
-  for (const el of document.querySelectorAll('.tb')) el.classList.toggle('wait', p.cds[el.dataset.slot] > 0.3);
+  it.mx = b.fx * f + b.rx * s; it.my = b.fy * f + b.ry * s; // 카메라 기준 이동
 }
 
+// ───────── 루프 ─────────
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - state.last) / 1000 || 0);
+  state.last = now;
+  const w = state.world, r = state.renderer;
+  if (!w) return;
+  if (state.running) {
+    if (!state.paused) {
+      playerIntent(w, state.player);
+      state.acc += dt;
+      while (state.acc >= STEP) {
+        for (const h of w.heroes) if (h.ai) updateBot(w, h, STEP);
+        w.step(STEP);
+        state.acc -= STEP;
+      }
+      handleEvents();
+      updateHud();
+      if (w.over !== null) { state.endT -= dt; if (state.endT <= 0) { endGame(); return; } }
+    }
+    r.render(w, state.player, state.paused ? 0 : dt, 'play');
+  } else {
+    state.acc += dt;
+    while (state.acc >= STEP) { for (const h of w.heroes) updateBot(w, h, STEP); w.step(STEP); state.acc -= STEP; }
+    w.events.length = 0;
+    if (w.over !== null) enterDemo();
+    r.render(state.world, state.player, dt, 'demo');
+  }
+}
+
+// ───────── 키보드·마우스 ─────────
+function lockPointer() {
+  if (touch.on || !view.requestPointerLock) return;
+  try { const p = view.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* 잠금 실패 시 화면 클릭으로 다시 시도한다 */ }
+}
+function setPaused(v) {
+  if (!state.running) return;
+  state.paused = v; $('pause').classList.toggle('hidden', !v);
+  if (v) { keys.clear(); mouse.l = mouse.r = false; if (document.pointerLockElement) document.exitPointerLock(); } else lockPointer();
+}
+addEventListener('keydown', (e) => {
+  if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  if (e.code === 'Escape') { if (state.running && !state.paused) setPaused(true); return; } // 재개는 버튼으로 (포인터 잠금은 클릭이 필요하다)
+  if (e.code === 'KeyP') { if (state.running) setPaused(!state.paused); return; }
+  keys.add(e.code);
+});
+addEventListener('keyup', (e) => keys.delete(e.code));
+addEventListener('blur', () => { keys.clear(); mouse.l = mouse.r = false; });
+addEventListener('mousemove', (e) => { if (document.pointerLockElement === view && state.running && !state.paused) state.renderer.look(e.movementX, e.movementY); });
+view.addEventListener('mousedown', (e) => {
+  if (!state.running || state.paused || touch.on) return;
+  if (document.pointerLockElement !== view) { lockPointer(); return; } // 첫 클릭은 조준 고정에만 쓴다
+  if (e.button === 0) mouse.l = true;
+  if (e.button === 2) mouse.r = true;
+});
+addEventListener('mouseup', (e) => { if (e.button === 0) mouse.l = false; if (e.button === 2) mouse.r = false; });
+addEventListener('contextmenu', (e) => e.preventDefault());
+// Esc 로 포인터 잠금이 풀리면 일시정지로 처리한다
+document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement !== view && state.running && !state.paused && !touch.on && state.world.over === null) setPaused(true); });
+addEventListener('resize', () => { if (state.renderer) state.renderer.resize(); paintArt(); });
+
+// ───────── 터치 ─────────
+// 왼쪽 아래: 이동 조이스틱 / 화면 오른쪽 끌기: 시점 회전 / 버튼: 누르고 있으면 시전(가까운 적 자동 조준), 버튼을 누른 채 끌면 시점을 돌려 직접 조준
 function enableTouch() {
   if (touch.on) return;
   touch.on = true;
@@ -257,7 +298,7 @@ function enableTouch() {
 }
 
 function setupTouch() {
-  const zone = $('joy-zone'), joy = $('joy'), knob = joy.firstElementChild;
+  const zone = $('joy-zone'), joy = $('joy'), knob = joy.firstElementChild, lookZone = $('look-zone');
   const place = () => {
     const j = touch.joy, rect = zone.getBoundingClientRect();
     if (!j) { joy.style.left = '110px'; joy.style.top = 'calc(100% - 110px)'; knob.style.transform = ''; return; }
@@ -265,55 +306,52 @@ function setupTouch() {
     const dx = j.x - j.ox, dy = j.y - j.oy, d = Math.hypot(dx, dy) || 1, k = Math.min(d, 50) / d;
     knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
   };
-  zone.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.changedTouches[0]; touch.joy = { id: t.identifier, ox: t.clientX, oy: t.clientY, x: t.clientX, y: t.clientY }; place(); }, { passive: false });
-  zone.addEventListener('touchmove', (e) => { e.preventDefault(); for (const t of e.changedTouches) if (touch.joy && t.identifier === touch.joy.id) { touch.joy.x = t.clientX; touch.joy.y = t.clientY; place(); } }, { passive: false });
+  const opt = { passive: false };
+  zone.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.changedTouches[0]; touch.joy = { id: t.identifier, ox: t.clientX, oy: t.clientY, x: t.clientX, y: t.clientY }; place(); }, opt);
+  zone.addEventListener('touchmove', (e) => { e.preventDefault(); for (const t of e.changedTouches) if (touch.joy && t.identifier === touch.joy.id) { touch.joy.x = t.clientX; touch.joy.y = t.clientY; place(); } }, opt);
   const endJoy = (e) => { for (const t of e.changedTouches) if (touch.joy && t.identifier === touch.joy.id) { touch.joy = null; place(); } };
   zone.addEventListener('touchend', endJoy); zone.addEventListener('touchcancel', endJoy);
+
+  const lookMove = (rec, t) => { const dx = t.clientX - rec.x, dy = t.clientY - rec.y; rec.x = t.clientX; rec.y = t.clientY; rec.moved = (rec.moved || 0) + Math.abs(dx) + Math.abs(dy); if (state.running && !state.paused) state.renderer.look(dx * 2.6, dy * 2.2); };
+  lookZone.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.changedTouches[0]; touch.look = { id: t.identifier, x: t.clientX, y: t.clientY }; }, opt);
+  lookZone.addEventListener('touchmove', (e) => { e.preventDefault(); for (const t of e.changedTouches) if (touch.look && t.identifier === touch.look.id) lookMove(touch.look, t); }, opt);
+  const endLook = (e) => { for (const t of e.changedTouches) if (touch.look && t.identifier === touch.look.id) touch.look = null; };
+  lookZone.addEventListener('touchend', endLook); lookZone.addEventListener('touchcancel', endLook);
+
   for (const el of document.querySelectorAll('.tb')) {
     const slot = el.dataset.slot;
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.changedTouches[0]; touch.btn[slot] = { id: t.identifier, sx: t.clientX, sy: t.clientY, x: t.clientX, y: t.clientY }; el.classList.add('down'); }, { passive: false });
-    el.addEventListener('touchmove', (e) => { e.preventDefault(); const b = touch.btn[slot]; for (const t of e.changedTouches) if (b && t.identifier === b.id) { b.x = t.clientX; b.y = t.clientY; } }, { passive: false });
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.changedTouches[0]; touch.btn[slot] = { id: t.identifier, x: t.clientX, y: t.clientY, moved: 0 }; el.classList.add('down'); }, opt);
+    el.addEventListener('touchmove', (e) => { e.preventDefault(); const b = touch.btn[slot]; for (const t of e.changedTouches) if (b && t.identifier === b.id) lookMove(b, t); }, opt);
     const end = (e) => { e.preventDefault(); delete touch.btn[slot]; el.classList.remove('down'); };
     el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
   }
-  $('tb-pause').addEventListener('touchstart', (e) => { e.preventDefault(); setPaused(!state.paused); }, { passive: false });
-  $('tb-score').addEventListener('touchstart', (e) => { e.preventDefault(); touch.score = !touch.score; }, { passive: false });
+  $('tb-pause').addEventListener('touchstart', (e) => { e.preventDefault(); setPaused(!state.paused); }, opt);
+  $('tb-score').addEventListener('touchstart', (e) => { e.preventDefault(); touch.score = !touch.score; }, opt);
   addEventListener('touchstart', enableTouch, { passive: true });
 }
 setupTouch();
-
-// ───────── 입력 ─────────
-function setPaused(v) { if (!state.running) return; state.paused = v; $('pause').classList.toggle('hidden', !v); }
-addEventListener('keydown', (e) => {
-  if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
-  if (e.code === 'Escape') setPaused(!state.paused);
-  keys.add(e.code);
-});
-addEventListener('keyup', (e) => keys.delete(e.code));
-addEventListener('blur', () => { keys.clear(); mouse.l = mouse.r = false; });
-addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-addEventListener('mousedown', (e) => { if (e.target.id !== 'view') return; if (e.button === 0) mouse.l = true; if (e.button === 2) mouse.r = true; });
-addEventListener('mouseup', (e) => { if (e.button === 0) mouse.l = false; if (e.button === 2) mouse.r = false; });
-addEventListener('contextmenu', (e) => e.preventDefault());
-addEventListener('resize', () => { if (state.renderer) state.renderer.resize(); paintArt(); });
 
 $('btn-start').onclick = () => { buildSelect(); show('screen-select'); };
 $('btn-play').onclick = startGame;
 $('btn-again').onclick = () => { buildSelect(); show('screen-select'); };
 $('btn-resume').onclick = () => setPaused(false);
-$('btn-quit').onclick = () => { state.running = false; state.paused = false; buildSelect(); show('screen-select'); };
+$('btn-quit').onclick = () => { $('pause').classList.add('hidden'); enterDemo(); buildSelect(); show('screen-select'); };
 for (const b of document.querySelectorAll('[data-diff]')) {
   b.onclick = () => { state.difficulty = Number(b.dataset.diff); document.querySelectorAll('[data-diff]').forEach((x) => x.classList.toggle('on', x === b)); };
 }
 
 // ───────── 부팅 ─────────
+const lowSpec = matchMedia('(pointer: coarse)').matches;
+try {
+  state.renderer = new Renderer3D(view, $('overlay'), { low: lowSpec });
+} catch (err) {
+  $('btn-start').textContent = '이 브라우저는 WebGL 을 지원하지 않습니다';
+  throw err;
+}
+enterDemo();
+requestAnimationFrame(frame);
 loadAssets((p) => { $('btn-start').textContent = `불러오는 중… ${Math.round(p * 100)}%`; }).then((assets) => {
   state.assets = assets;
-  state.renderer = new Renderer($('view'), $('minimap'), assets);
-  if (assets.title) for (const s of document.querySelectorAll('.screen')) s.style.setProperty('--bg', `url(${assets.title.img.src})`);
-  // 타이틀 뒤에서 봇끼리 싸우는 데모 전투를 보여준다
-  const demo = new World({ roster: [{ hero: 'kai', team: 0, lane: 'top' }, { hero: 'lyra', team: 0, lane: 'bot' }, { hero: 'brom', team: 0, lane: 'top' }, { hero: 'sera', team: 1, lane: 'top' }, { hero: 'brom', team: 1, lane: 'bot' }, { hero: 'lyra', team: 1, lane: 'bot' }] });
-  state.world = demo; state.player = demo.heroes[0];
+  if (assets.title) $('screen-title').style.setProperty('--bg', `url(${typeof ASSETS.title === 'string' ? ASSETS.title : ASSETS.title.src})`);
   const b = $('btn-start'); b.disabled = false; b.textContent = '게임 시작';
-  requestAnimationFrame(frame);
 });
