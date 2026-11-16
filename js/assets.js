@@ -9,6 +9,7 @@ const sheet = (file, cols, rows, keys) => Object.fromEntries(keys.map((k, i) => 
 
 export const ASSETS = {
   hero_kai: CDN + 'hf_20261116_091153_95e86984-b2b5-4867-a6dd-e86c28b75c57.png',
+  portrait_sera: CDN + 'hf_20261116_113820_08ba2ba2-a81c-488f-a216-cdc71e1b1c0e.png',
 };
 
 // CSS 배경으로 쓸 때의 스타일 (시트의 한 칸만 보이게)
