@@ -1,9 +1,10 @@
-// 3D 모델 생성기 — 도형을 조합해 코드로 만든다 (외부 모델 파일 없음).
+// Procedural fallback models and optional Blender GLB characters.
 // 영웅은 data.js 의 look 명세만 보고 조립하므로, 영웅을 추가해도 이 파일은 고칠 필요가 없다.
 // 좌표 규약: 모델의 정면은 +X, 위는 +Y, 오른손 쪽은 +Z. 단위는 미터.
 import * as THREE from '../vendor/three.module.min.js';
 import { TEAM_COLOR } from './data.js';
 import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from '../vendor/utils/SkeletonUtils.js';
 
 const modelLoader = new GLTFLoader();
 const modelCache = new Map();
@@ -109,10 +110,12 @@ export function buildHero(def, team) {
   if (w.right) { w.right.position.set(0, -0.68, 0); armR.add(w.right); }
   if (w.left) { w.left.position.set(0, L.weapon === 'pistols' ? -0.68 : -0.4, 0); armL.add(w.left); }
 
+  let animation = null;
+  const modelUrl = new URLSearchParams(location.search).get('model') === 'block' && L.modelPrevious ? L.modelPrevious : L.model;
   // Keep the procedural body while loading, or if the optional asset fails.
   if (L.model && new URLSearchParams(location.search).get('model') !== 'original') {
-    loadModel(L.model).then((gltf) => {
-      const model = gltf.scene.clone(true);
+    loadModel(modelUrl).then((gltf) => {
+      const model = cloneSkeleton(gltf.scene);
       model.rotation.y = Math.PI / 2;
       const originals = [];
       body.traverse((o) => { if (o.isMesh) originals.push(o); });
@@ -125,7 +128,12 @@ export function buildHero(def, team) {
       const parts = [];
       model.traverse((o) => { if (o.isMesh) parts.push(o); });
       for (const o of parts) {
-        o.material = o.material.clone(); o.castShadow = true;
+        const toon = (m) => new THREE.MeshToonMaterial({ color: m.color, emissive: m.emissive,
+          emissiveIntensity: m.emissiveIntensity, side: m.side });
+        o.material = Array.isArray(o.material) ? o.material.map(toon) : toon(o.material);
+        o.castShadow = true; o.receiveShadow = true;
+        if (o.isSkinnedMesh) o.frustumCulled = false;
+        if (gltf.animations.length) continue;
         const p = body.worldToLocal(o.getWorldPosition(new THREE.Vector3()));
         const right = p.z > 0;
         let pivot;
@@ -134,7 +142,14 @@ export function buildHero(def, team) {
         if (pivot) pivot.attach(o);
       }
       pivots.forEach((o, i) => o.rotation.copy(poses[i]));
-      root.userData.modelSource = L.model;
+      if (gltf.animations.length) {
+        const mixer = new THREE.AnimationMixer(model), actions = {};
+        for (const clip of gltf.animations) actions[clip.name] = mixer.clipAction(clip);
+        if (actions.Slash) actions.Slash.setLoop(THREE.LoopOnce, 1);
+        animation = { mixer, actions, current: null, castT: -Infinity };
+        root.userData.animationClips = Object.keys(actions);
+      }
+      root.userData.modelSource = modelUrl;
     }).catch((err) => console.warn('Character model unavailable; using procedural model', err));
   }
 
@@ -186,13 +201,32 @@ export function buildHero(def, team) {
     armR.rotation.z = aR; armL.rotation.z = aL;
     body.rotation.set(h.stunT > 0 ? Math.sin(time * 14) * 0.18 : 0, twist, lean + roll);
     body.position.y = (L.hover ? 0.22 + Math.sin(time * 2.2) * 0.07 : Math.abs(Math.sin(st.phase)) * 0.05 * run) + (roll ? 0.5 : 0);
+    if (animation) {
+      const { actions, mixer } = animation;
+      const attacking = sk && h.castSlot !== 'space' && t >= 0 && t < 1;
+      const name = attacking && actions.Slash ? 'Slash' : run > 0.08 && actions.Run ? 'Run' : 'Idle';
+      const action = actions[name];
+      const restart = name === 'Slash' && animation.castT !== h.castT;
+      if (action && (animation.current !== action || restart)) {
+        if (animation.current && animation.current !== action) animation.current.fadeOut(0.12);
+        action.reset().fadeIn(0.12).play(); animation.current = action;
+        if (name === 'Slash') { animation.castT = h.castT; action.setEffectiveTimeScale(action.getClip().duration / dur); }
+      }
+      if (name === 'Run') action.setEffectiveTimeScale(Math.max(0.65, sp / 335));
+      mixer.update(dt);
+      root.userData.animationState = name;
+    }
     if (w.spin) w.spin.rotation.y += dt * 2;
     flash.material.opacity = h.flashT > 0 ? 0.35 : 0;
     shield.visible = h.buffs.some((b) => b.fx === 'shield');
     healFx.visible = h.buffs.some((b) => b.potion);
     recall.visible = !!h.recall;
     if (h.recall) { const k = 1 - h.recall.t / 4; recall.material.opacity = 0.2 + k * 0.45; recall.scale.set(1.15 - k * 0.5, 1, 1.15 - k * 0.5); recall.rotation.y = time * 4; }
-    body.traverse((o) => { if (o.material && o.material.transparent !== (h.invulnT > 0)) { o.material.transparent = h.invulnT > 0; o.material.opacity = h.invulnT > 0 ? 0.5 : 1; o.material.needsUpdate = true; } });
+    body.traverse((o) => {
+      for (const m of o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []) {
+        if (m.transparent !== (h.invulnT > 0)) { m.transparent = h.invulnT > 0; m.opacity = h.invulnT > 0 ? 0.5 : 1; m.needsUpdate = true; }
+      }
+    });
   }
   return { root, update, height: 2.15 * (L.scale || 1) };
 }

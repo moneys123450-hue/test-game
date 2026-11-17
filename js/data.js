@@ -97,7 +97,7 @@ export const HEROES = {
   kai: {
     id: 'kai', name: '카이', title: '섬광의 검사', role: '근접 돌격', color: '#35e0ff',
     hp: 1550, atk: 96, speed: 335, r: 27, hpLv: 135, atkLv: 9, aiRange: 110, sprite: 150,
-    look: { model: 'art/kai-blender/kai-prototype.glb', scale: 1.0, skin: '#e8b89a', hair: { color: '#1b1f2a', style: 'spiky', streak: '#35e0ff' }, torso: '#2f3a52', legs: '#222a3a', accent: '#35e0ff', weapon: 'katana', anim: 'slash' },
+    look: { model: 'art/kai-blender/kai-anime.glb', modelPrevious: 'art/kai-blender/kai-prototype.glb', scale: 1.0, skin: '#e8b89a', hair: { color: '#1b1f2a', style: 'spiky', streak: '#35e0ff' }, torso: '#2f3a52', legs: '#222a3a', accent: '#35e0ff', weapon: 'katana', anim: 'slash' },
     build: ['boots1', 'sword', 'fang', 'greatsword', 'boots2', 'heart'], // 봇이 사는 순서
     blurb: '빠른 연속 베기와 돌진으로 적진을 파고드는 근접 딜러.',
     skills: {

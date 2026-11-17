@@ -93,6 +93,8 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 
 ### Blender 카이 로컬 시제품 (2026-11-17)
 
+업데이트: 기본 모델을 `kai-anime.glb`로 교체했다. 곡면 인체·얼굴·겹친 머리카락·코트·스카프와 19개 뼈대, 스킨 가중치, Idle/Run/Slash 클립을 포함한다. `tools/build-kai-anime.py`로 재생성한다. `models.js`는 SkeletonUtils로 인스턴스별 뼈대를 복제하고 AnimationMixer로 상태별 클립을 재생한다. toon 재질 사용. `character.html`에서 회전·얼굴 확대·동작 재생·이전 모델 비교 가능. 이전 GLB는 `look.modelPrevious`와 `?model=block`로 보존했다. `?model=original`도 유지한다. Chromium에서 뼈대 로드, 각 캐릭터의 독립성, Idle/Run/Slash 전환, 이전 모델 비교와 브라우저 예외 없음 확인. 시드 1·2 시뮬레이션 통과.
+
 - `art/kai-blender/`에 Blender 원본, GLB, 앞·뒤 렌더와 설명을 추가했다. 재생성은 `tools/build-kai.py`를 Blender에서 실행한다. 유료 API는 사용하지 않는다.
 - `HEROES.kai.look.model`로 GLB를 선택하고 `models.js`가 로드한다. 이름으로 팔·다리를 기존 동작 피벗에 연결한다. 스켈레톤 애니메이션은 없다. 실패 시 기존 모델 유지.
 - Three.js r170 GLTFLoader 및 BufferGeometryUtils를 vendor에 추가했다 (기존 THREE-LICENSE 적용).
