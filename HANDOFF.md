@@ -93,6 +93,8 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 
 ### Blender 카이 로컬 시제품 (2026-11-17)
 
+디테일 개선판: 얼굴 곡면에 맞춘 눈, 피부 버텍스 컬러, 세분화한 머리카락, 의상 주름·봉제선, 손잡이를 감싼 손과 부츠 밑창을 추가했다. Blink/LookLeft/LookRight 모프는 `js/character-style.js`에서 독립 재생한다. 피부·의상·금속 재질도 이 모듈이 관리한다. 달리기는 접지/회수 발 궤적과 2관절 계산을 사용하며, 베기는 골반과 허리 회전을 수정했다. `js/character-preview.js`가 비교 화면을 담당한다. 직전 GLB는 `kai-anime-v1.glb`, 게임 비교는 `?model=previous`, 초기 블록 모델은 `?model=block`. Chromium에서 세 모프, 표정·뼈대 인스턴스 독립성, Idle/Run/Slash, 직전 모델 비교, 발 궤적과 브라우저 예외 없음 확인. 문법 검사와 시드 1·2 시뮬레이션 검증.
+
 업데이트: 기본 모델을 `kai-anime.glb`로 교체했다. 곡면 인체·얼굴·겹친 머리카락·코트·스카프와 19개 뼈대, 스킨 가중치, Idle/Run/Slash 클립을 포함한다. `tools/build-kai-anime.py`로 재생성한다. `models.js`는 SkeletonUtils로 인스턴스별 뼈대를 복제하고 AnimationMixer로 상태별 클립을 재생한다. toon 재질 사용. `character.html`에서 회전·얼굴 확대·동작 재생·이전 모델 비교 가능. 이전 GLB는 `look.modelPrevious`와 `?model=block`로 보존했다. `?model=original`도 유지한다. Chromium에서 뼈대 로드, 각 캐릭터의 독립성, Idle/Run/Slash 전환, 이전 모델 비교와 브라우저 예외 없음 확인. 시드 1·2 시뮬레이션 통과.
 
 - `art/kai-blender/`에 Blender 원본, GLB, 앞·뒤 렌더와 설명을 추가했다. 재생성은 `tools/build-kai.py`를 Blender에서 실행한다. 유료 API는 사용하지 않는다.

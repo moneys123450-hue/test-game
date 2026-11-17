@@ -5,6 +5,7 @@ import * as THREE from '../vendor/three.module.min.js';
 import { TEAM_COLOR } from './data.js';
 import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from '../vendor/utils/SkeletonUtils.js';
+import { characterMaterial, createExpressions } from './character-style.js';
 
 const modelLoader = new GLTFLoader();
 const modelCache = new Map();
@@ -111,7 +112,8 @@ export function buildHero(def, team) {
   if (w.left) { w.left.position.set(0, L.weapon === 'pistols' ? -0.68 : -0.4, 0); armL.add(w.left); }
 
   let animation = null;
-  const modelUrl = new URLSearchParams(location.search).get('model') === 'block' && L.modelPrevious ? L.modelPrevious : L.model;
+  const variant = new URLSearchParams(location.search).get('model');
+  const modelUrl = variant === 'block' && L.modelBlock ? L.modelBlock : variant === 'previous' && L.modelPrevious ? L.modelPrevious : L.model;
   // Keep the procedural body while loading, or if the optional asset fails.
   if (L.model && new URLSearchParams(location.search).get('model') !== 'original') {
     loadModel(modelUrl).then((gltf) => {
@@ -128,8 +130,7 @@ export function buildHero(def, team) {
       const parts = [];
       model.traverse((o) => { if (o.isMesh) parts.push(o); });
       for (const o of parts) {
-        const toon = (m) => new THREE.MeshToonMaterial({ color: m.color, emissive: m.emissive,
-          emissiveIntensity: m.emissiveIntensity, side: m.side });
+        const toon = (m) => characterMaterial(m, !!o.geometry.attributes.color);
         o.material = Array.isArray(o.material) ? o.material.map(toon) : toon(o.material);
         o.castShadow = true; o.receiveShadow = true;
         if (o.isSkinnedMesh) o.frustumCulled = false;
@@ -146,8 +147,9 @@ export function buildHero(def, team) {
         const mixer = new THREE.AnimationMixer(model), actions = {};
         for (const clip of gltf.animations) actions[clip.name] = mixer.clipAction(clip);
         if (actions.Slash) actions.Slash.setLoop(THREE.LoopOnce, 1);
-        animation = { mixer, actions, current: null, castT: -Infinity };
+        animation = { mixer, actions, expressions: createExpressions(model), current: null, castT: -Infinity };
         root.userData.animationClips = Object.keys(actions);
+        root.userData.expressions = animation.expressions.supported;
       }
       root.userData.modelSource = modelUrl;
     }).catch((err) => console.warn('Character model unavailable; using procedural model', err));
@@ -199,8 +201,8 @@ export function buildHero(def, team) {
     }
     if (h.dash) { lean = -0.55; if (h.invulnT > 0 && h.dash.eff.toMove) roll = -(1 - h.dash.t / h.dash.eff.dur) * Math.PI * 2; }
     armR.rotation.z = aR; armL.rotation.z = aL;
-    body.rotation.set(h.stunT > 0 ? Math.sin(time * 14) * 0.18 : 0, twist, lean + roll);
-    body.position.y = (L.hover ? 0.22 + Math.sin(time * 2.2) * 0.07 : Math.abs(Math.sin(st.phase)) * 0.05 * run) + (roll ? 0.5 : 0);
+    body.rotation.set(h.stunT > 0 ? Math.sin(time * 14) * 0.18 : 0, animation ? 0 : twist, (animation ? (h.dash ? -.3 : 0) : lean) + roll);
+    body.position.y = (L.hover ? 0.22 + Math.sin(time * 2.2) * 0.07 : animation ? 0 : Math.abs(Math.sin(st.phase)) * 0.05 * run) + (roll ? 0.5 : 0);
     if (animation) {
       const { actions, mixer } = animation;
       const attacking = sk && h.castSlot !== 'space' && t >= 0 && t < 1;
@@ -214,6 +216,7 @@ export function buildHero(def, team) {
       }
       if (name === 'Run') action.setEffectiveTimeScale(Math.max(0.65, sp / 335));
       mixer.update(dt);
+      animation.expressions.update(time, (h.id || 0) * .73);
       root.userData.animationState = name;
     }
     if (w.spin) w.spin.rotation.y += dt * 2;
