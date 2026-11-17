@@ -3,6 +3,14 @@
 // 좌표 규약: 모델의 정면은 +X, 위는 +Y, 오른손 쪽은 +Z. 단위는 미터.
 import * as THREE from '../vendor/three.module.min.js';
 import { TEAM_COLOR } from './data.js';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+
+const modelLoader = new GLTFLoader();
+const modelCache = new Map();
+function loadModel(url) {
+  if (!modelCache.has(url)) modelCache.set(url, modelLoader.loadAsync(url));
+  return modelCache.get(url);
+}
 
 export const S = 1 / 50; // 시뮬레이션 단위 → 미터
 
@@ -100,6 +108,35 @@ export function buildHero(def, team) {
   const w = WEAPONS[L.weapon](L);
   if (w.right) { w.right.position.set(0, -0.68, 0); armR.add(w.right); }
   if (w.left) { w.left.position.set(0, L.weapon === 'pistols' ? -0.68 : -0.4, 0); armL.add(w.left); }
+
+  // Keep the procedural body while loading, or if the optional asset fails.
+  if (L.model && new URLSearchParams(location.search).get('model') !== 'original') {
+    loadModel(L.model).then((gltf) => {
+      const model = gltf.scene.clone(true);
+      model.rotation.y = Math.PI / 2;
+      const originals = [];
+      body.traverse((o) => { if (o.isMesh) originals.push(o); });
+      originals.forEach((o) => { o.visible = false; });
+      body.add(model);
+      const pivots = [armR, armL, legR, legL].filter(Boolean);
+      const poses = pivots.map((o) => o.rotation.clone());
+      pivots.forEach((o) => o.rotation.set(0, 0, 0));
+      root.updateMatrixWorld(true);
+      const parts = [];
+      model.traverse((o) => { if (o.isMesh) parts.push(o); });
+      for (const o of parts) {
+        o.material = o.material.clone(); o.castShadow = true;
+        const p = body.worldToLocal(o.getWorldPosition(new THREE.Vector3()));
+        const right = p.z > 0;
+        let pivot;
+        if (/^(Upper_arm|Elbow|Forearm_gauntlet|Glove|Katana|Blade|Energy_edge)/.test(o.name)) pivot = right ? armR : armL;
+        else if (/^(Thigh|Knee|Shin|Boot)/.test(o.name)) pivot = right ? legR : legL;
+        if (pivot) pivot.attach(o);
+      }
+      pivots.forEach((o, i) => o.rotation.copy(poses[i]));
+      root.userData.modelSource = L.model;
+    }).catch((err) => console.warn('Character model unavailable; using procedural model', err));
+  }
 
   // 발밑 진영 표시, 피격 섬광, 보호막
   const ring = new THREE.Mesh(new THREE.RingGeometry(def.r * S * 1.15, def.r * S * 1.4, 28), new THREE.MeshBasicMaterial({ color: TEAM_COLOR[team], transparent: true, opacity: 0.9, depthWrite: false }));

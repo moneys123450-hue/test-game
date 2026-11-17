@@ -1,1 +1,1 @@
-{ "name": "eclipse-arena", "private": true, "type": "module" }
+{ "name": "eclipse-arena", "private": true, "scripts": { "dev": "python -m http.server 8000 --bind 127.0.0.1" }, "type": "module" }
