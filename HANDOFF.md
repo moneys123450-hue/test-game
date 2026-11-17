@@ -93,6 +93,8 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 
 ### Blender 카이 현재 상태
 
+세라 무료 로컬 경로 검증(2026-11-17): TripoSR 공개 MIT 모델을 CPU로 실행해 실제 색상 GLB 저장에 성공했다. `art/sera-ai/sera-triposr-local.glb`는 256 해상도·45824 정점·91656 면·약 1.83MB, 모델 로딩 포함 약 42초다. 정규화 GLB/Blender 파일/앞뒤 렌더와 `sera-preview.html`을 추가했다. **얼굴·손·의상 디테일이 뭉개져 사용자 목표 품질에는 미달하고, 리깅/게임 적용은 하지 않았다.** 무료로 저장 가능한 경로 검증 결과와 품질 달성 여부를 구분한다. 재현은 `tools/download-triposr.py`, `tools/generate-sera-local.py`, `tools/preview-ai-model.py` 및 `art/sera-ai/README.md` 참고. 공식 소스/CPU 가상환경/1.7GB weights는 이 PC의 `%LOCALAPPDATA%\TripoSR`에만 있다. 이전 데모 PNG의 검정 배경을 투명으로 오인한 문제를 rembg/u2netp와 알파 범위 검증으로 수정했다. 별도 브라우저 검사는 `tools/check-local-ai.cjs`다. Tripo 웹은 사용자가 H2.5에서도 유료 업그레이드가 요구된다고 확인했으므로 무료 내보내기를 보장하지 않는다.
+
 세라 AI 생성 시도(2026-11-17): `art/sera-ai/sera-reference-front.png`는 내장 imagegen으로 만든 전신 기준 **2D 이미지**다. `tools/generate-sera-ai.py`로 Microsoft 공식 TRELLIS.2 데모의 이미지 전처리는 성공했으나, 실제 3D 생성은 ZeroGPU 할당량 오류로 거절돼 **GLB/리깅/게임 적용은 아직 없다**. 원본 프롬프트와 실행 상태·재개 절차는 `art/sera-ai/README.md`에 기록했다. GTX 1060 3GB라 고해상도 모델 로컬 설치는 하지 않았고 유료 생성도 실행하지 않았다. fal은 발견했으나 연결 미확인이다. 계정 인증/무료 이용량 확인 후 이어간다. 기존 카이 모델은 유지한다.
 
 **이번 제작은 이미지→3D 생성 API가 아니라, Codex가 Blender Python으로 메시·재질·뼈대·동작을 작성하고 Blender에서 실행한 방식이다. Blender MCP는 설치하지 않았고, 유료 생성 API·외부 캐릭터 에셋도 사용하지 않았다.** PNG는 결과 확인용 렌더이며 실제 게임은 GLB를 불러온다.

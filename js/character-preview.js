@@ -37,9 +37,9 @@ function play(name) {
 }
 async function load(type) {
   const id = ++request; document.querySelector('#status').textContent = '모델 불러오는 중…';
-  const files = { anime: 'kai-anime.glb?v=detail2', previous: 'kai-anime-v1.glb', block: 'kai-prototype.glb' };
+  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb' };
   try {
-    const gltf = await new GLTFLoader().loadAsync(`./art/kai-blender/${files[type]}`);
+    const gltf = await new GLTFLoader().loadAsync(files[type]);
     if (id !== request) return;
     if (model) {
       scene.remove(model); if (mixer) mixer.stopAllAction();
@@ -57,7 +57,7 @@ async function load(type) {
     document.querySelectorAll('[data-clip]').forEach((b) => b.disabled = !actions[b.dataset.clip]);
     document.querySelectorAll('[data-model]').forEach((b) => b.classList.toggle('active', b.dataset.model === type));
     document.querySelector('#blink').disabled = !expressions.supported;
-    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 / 눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품' }[type];
+    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 / 눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 변환 성공 · 색상 포함 정적 모델 · 뼈대/애니메이션 미적용' }[type];
     window.__character = { model, mixer, actions, play, expressions, type, expressionOverride: null };
   } catch (e) { document.querySelector('#status').textContent = '모델을 불러오지 못했습니다'; console.error(e); }
 }
@@ -91,4 +91,4 @@ function frame() {
   camera.position.set(Math.sin(angle) * distance * Math.cos(pitch), targetY + Math.sin(pitch) * distance, Math.cos(angle) * distance * Math.cos(pitch));
   camera.lookAt(0, targetY, 0); renderer.render(scene, camera);
 }
-load('anime'); frame();
+load(document.body.dataset.character || 'anime'); frame();

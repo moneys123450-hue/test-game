@@ -1,0 +1,9 @@
+# Python 3.13 CPU authoring environment. Install CPU torch/torchvision separately
+# from https://download.pytorch.org/whl/cpu; do not install in the game's runtime.
+omegaconf==2.3.0
+einops==0.7.0
+transformers==4.49.0
+trimesh==5.2.1
+rembg[cpu]==2.0.87
+imageio==2.38.2
+scikit-image==0.26.0

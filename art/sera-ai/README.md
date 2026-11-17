@@ -1,6 +1,46 @@
-# 세라 AI 3D 제작 준비 — 모델 생성 미완료
+# 세라 AI 3D 제작 — 무료 CPU 변환 검증
 
-현재 파일은 **전신 기준 이미지**이며, 실제 AI 3D GLB나 애니메이션이 아니다. 게임의 캐릭터 모델은 이 작업으로 교체하지 않았다.
+**로컬 TripoSR로 색상이 포함된 GLB 생성·저장과 Blender 열람을 확인했다.** 다만 얼굴·손·머리카락·의상 디테일이 많이 뭉개져 원하는 세라 품질에는 미달한다. 뼈대와 애니메이션도 없다. 게임의 캐릭터 모델은 교체하지 않았다. 원본 이미지는 별개의 2D 파일이다.
+
+## 실제 저장된 결과
+
+- `sera-triposr-local.glb`: 로컬 CPU 생성 원본, 256 해상도, 45824개 정점/91656개 면, 약 1.83MB. 모델 로딩 포함 생성 약 42초.
+- `sera-triposr-normalized.glb`: Blender에서 축 방향·크기를 보정한 2m 높이 미리보기용 모델.
+- `sera-triposr-local.blend`: 생성 모델과 검수용 카메라·조명을 포함한 Blender 파일.
+- `sera-triposr-front.png`, `sera-triposr-back.png`: 실제 모델 렌더. 전신 기준 이미지나 그림을 3D 결과라고 제시하지 않는다.
+- `http://127.0.0.1:8000/sera-preview.html`: 회전·확대 검수용 화면. 동작 버튼은 비활성화되어 있다.
+- 생성 수치는 `triposr-generation.json`, 도구 라이선스는 `TripoSR-LICENSE`에 있다.
+
+## 로컬 실행 (계정·구독·내보내기 결제 없음)
+
+실제 환경은 Python 3.13, CPU PyTorch 2.15.0, Transformers 4.49.0이다. 공식 구버전 requirements의 일부 패키지는 Python 3.13용 바이너리가 없어 호환 버전을 사용했다. CUDA 확장 torchmcubes 대신 scikit-image 어댑터를 사용하며 `--self-test`로 좌표 규약을 검사한다. 이 PC의 도구·가상환경은 `%LOCALAPPDATA%\TripoSR`, 모델은 그 아래 `weights`에 있다. 1.7GB 모델과 가상환경은 저장소에 넣지 않는다.
+
+설치 예시(저장소 루트, Windows PowerShell):
+
+```powershell
+$toolRoot = "$env:LOCALAPPDATA\TripoSR"
+git clone --depth 1 https://github.com/VAST-AI-Research/TripoSR.git "$toolRoot\source"
+python -m venv "$toolRoot\venv"
+& "$toolRoot\venv\Scripts\python.exe" -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+& "$toolRoot\venv\Scripts\python.exe" -m pip install -r tools/requirements-triposr-cpu.txt
+python tools/download-triposr.py
+& "$toolRoot\venv\Scripts\python.exe" tools/generate-sera-local.py --self-test
+& "$toolRoot\venv\Scripts\python.exe" tools/generate-sera-local.py --weights "$toolRoot\weights" --resolution 256
+```
+
+공개 모델은 `stabilityai/TripoSR`(MIT, gated=false)이다. 다운로드 스크립트는 새로 받은 model.ckpt의 SHA-256을 확인한다. 웹 서비스의 생성 결과나 유료 내보내기 데이터를 추출하는 방식이 아니다.
+
+첫 시도에서 데모의 전처리 PNG를 투명 이미지로 잘못 취급해 검정 배경까지 복원했다. 로컬 rembg/u2netp로 원본 배경을 제거하고 실제 알파 범위를 검사한 뒤 재실행했다. `.convert('RGBA')`만으로 투명 배경이 생기는 것은 아니다. Blender로 가져올 때 glTF/Blender 축 차이로 거꾸로 보일 수 있어 축 보정도 확인했다.
+
+Blender 검수/정규화:
+
+```powershell
+& 'C:\Users\USER\AppData\Local\BlenderPortable\blender-4.5.9-windows-x64\blender.exe' --background --python tools/preview-ai-model.py -- art/sera-ai/sera-triposr-local.glb
+```
+
+서버가 켜져 있고 Playwright를 별도 설치했다면 `node tools/check-local-ai.cjs`로 색상 속성·2m 높이·정적 모델 표시·브라우저 예외를 검사한다. 설치 방법과 `NODE_PATH`/`CHROMIUM_PATH`는 HANDOFF의 브라우저 검사 절차와 같다.
+
+## 이전 웹 경로 시도
 
 ## 이번 실행
 

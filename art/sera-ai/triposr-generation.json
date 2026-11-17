@@ -1,0 +1,11 @@
+{
+  "provider": "TripoSR, local CPU",
+  "model": "stabilityai/TripoSR",
+  "resolution": 256,
+  "vertices": 45824,
+  "faces": 91656,
+  "bytes": 1834052,
+  "seconds": 42.2,
+  "rigged": false,
+  "output": "sera-triposr-local.glb"
+}

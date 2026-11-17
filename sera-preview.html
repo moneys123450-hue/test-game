@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>세라 · 무료 로컬 AI 변환</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0c1421;color:#e7f1fa;font:15px/1.5 system-ui,'Malgun Gothic',sans-serif}canvas{display:block;width:100vw;height:calc(100dvh - 170px);touch-action:none}header{position:absolute;top:24px;left:28px;pointer-events:none}h1{margin:4px 0 10px;font-size:30px}small{color:#6cdaec;letter-spacing:.15em}.tools{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:min(760px,94vw);padding:16px;background:#101c2beb;border:1px solid #304454;border-radius:14px;backdrop-filter:blur(12px)}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}button,a{border:1px solid #3b5366;border-radius:7px;background:#1c2b3d;color:#e7f1fa;padding:9px 14px;font:inherit;text-decoration:none;cursor:pointer}button.active{background:#68d8ed;color:#102333;border-color:#68d8ed}p{margin:9px 0 0;color:#9bb0c3;font-size:13px}#status{max-width:70vw;color:#b0c5d5}a{margin-left:auto}button:disabled{opacity:.4;cursor:default}@media(max-width:600px){header{top:14px;left:18px}h1{font-size:23px}.tools{bottom:12px;padding:12px}button,a{padding:7px 10px}}
+</style>
+</head>
+<body data-character="sera">
+<canvas id="view" aria-label="세라 AI 3D 모델 미리보기"></canvas>
+<header><small>ECLIPSE ARENA / CHARACTER LAB</small><h1>세라 · 무료 로컬 AI 변환</h1><div id="status">모델 불러오는 중…</div></header>
+<div class="tools"><div class="row"><button data-model="sera" class="active">세라 AI 모델</button><a href="/">게임으로 돌아가기 ↗</a></div><div class="row" style="margin-top:10px"><button data-clip="Idle" class="active">대기</button><button data-clip="Run">달리기</button><button data-clip="Slash">베기</button><button id="face">얼굴 확대</button><button id="full">전체 보기</button><button id="blink">눈 깜빡임</button><button id="pause-motion" aria-pressed="false">일시정지</button></div><p>드래그: 회전 · 휠: 확대/축소 · 정적 변환 결과입니다. 게임 적용과 애니메이션은 아직 없습니다.</p></div>
+<script type="module" src="js/character-preview.js"></script>
+</body></html>
