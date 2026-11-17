@@ -9,6 +9,7 @@ const sheet = (file, cols, rows, keys) => Object.fromEntries(keys.map((k, i) => 
 
 export const ASSETS = {
   portrait_sera: CDN + 'hf_20261116_113820_08ba2ba2-a81c-488f-a216-cdc71e1b1c0e.png',
+  ...sheet('hf_20261117_015824_080bd72c-b338-4baf-a629-8166853ecdb1.webp', 4, 4, ["icon_kai_0", "icon_kai_1", "icon_kai_2", "icon_kai_3", "icon_lyra_0", "icon_lyra_1", "icon_lyra_2", "icon_lyra_3", "icon_brom_0", "icon_brom_1", "icon_brom_2", "icon_brom_3", "icon_sera_0", "icon_sera_1", "icon_sera_2", "icon_sera_3"]),
   // 영웅 탑다운 그림 (2D 시절 생성분). 초상화가 없는 영웅의 HUD·선택 화면 대체 이미지로 쓴다
   ...sheet('hf_20261116_125123_69977583-1aa2-4d59-ad44-e4c35543fa7a.webp', 2, 2, ['sprite_kai', 'sprite_lyra', 'sprite_brom', 'sprite_sera']),
 };
