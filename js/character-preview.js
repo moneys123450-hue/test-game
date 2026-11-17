@@ -37,7 +37,7 @@ function play(name) {
 }
 async function load(type) {
   const id = ++request; document.querySelector('#status').textContent = '모델 불러오는 중…';
-  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb', projected: './art/sera-ai/sera-projected.glb' };
+  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb', projected: './art/sera-ai/sera-projected.glb', multiview: './art/sera-ai/sera-multiview.glb' };
   try {
     const gltf = await new GLTFLoader().loadAsync(files[type]);
     if (id !== request) return;
@@ -46,7 +46,7 @@ async function load(type) {
       model.traverse((o) => { o.geometry?.dispose(); for (const m of o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []) m.dispose(); });
     }
     model = gltf.scene;
-    if (type === 'sera' || type === 'projected') model.rotation.y = -Math.PI / 2;
+    if (['sera', 'projected', 'multiview'].includes(type)) model.rotation.y = -Math.PI / 2;
     model.traverse((o) => {
       if (!o.isMesh) return;
       o.castShadow = o.receiveShadow = true; if (o.isSkinnedMesh) o.frustumCulled = false;
@@ -58,7 +58,7 @@ async function load(type) {
     document.querySelectorAll('[data-clip]').forEach((b) => b.disabled = !actions[b.dataset.clip]);
     document.querySelectorAll('[data-model]').forEach((b) => b.classList.toggle('active', b.dataset.model === type));
     document.querySelector('#blink').disabled = !expressions.supported;
-    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 /눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 원본 · 정적 모델 · 뼈대/애니메이션 미적용', projected: '정면 원본 그림 투영 · 형태는 동일 · 옆면/뒷면 한계 확인용' }[type];
+    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 /눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 원본 · 정적 모델 · 뼈대/애니메이션 미적용', projected: '정면 그림만 투영 · 이전 결과', multiview: '정면·뒷면·양쪽 옆면 투영 · 기존 입체 형태 유지 · 정적 모델' }[type];
     window.__character = { model, mixer, actions, play, expressions, type, expressionOverride: null };
   } catch (e) { document.querySelector('#status').textContent = '모델을 불러오지 못했습니다'; console.error(e); }
 }
@@ -66,6 +66,9 @@ document.querySelectorAll('[data-model]').forEach((b) => b.onclick = () => load(
 document.querySelectorAll('[data-clip]').forEach((b) => b.onclick = () => play(b.dataset.clip));
 document.querySelector('#face').onclick = () => { distance = .9; targetY = 1.79; pitch = .01; angle = .12; };
 document.querySelector('#full').onclick = () => { distance = 4.2; targetY = 1.05; pitch = .13; };
+document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
+  angle = Number(b.dataset.view); distance = 4.2; targetY = 1.05; pitch = .04;
+});
 document.querySelector('#blink').onclick = () => { blinkStart = elapsed; };
 document.querySelector('#pause-motion').onclick = (e) => {
   paused = !paused; e.currentTarget.textContent = paused ? '계속 재생' : '일시정지'; e.currentTarget.setAttribute('aria-pressed', paused);

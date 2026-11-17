@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
     const page = await browser.newPage({viewport:{width:1200,height:900}});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto('http://127.0.0.1:8000/sera-preview.html');
-    await page.waitForFunction(()=>window.__character?.type==='projected');
+    await page.waitForFunction(()=>window.__character?.type==='multiview');
     const inspect=()=>page.evaluate(async()=>{
       const THREE=await import('/vendor/three.module.min.js');
       let colored=0,textured=0,meshes=0,faces=0;__character.model.traverse(o=>{if(o.isMesh){meshes++;if(o.geometry.attributes.color&&o.material.vertexColors)colored++;if(o.material.map)textured++;faces+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3}});
@@ -19,13 +19,20 @@ const assert = require('node:assert/strict');
     assert(stats.meshes>0&&stats.textured===stats.meshes&&stats.colored===0);assert(Math.abs(stats.height-2)<.03);
     assert.equal(stats.clips.length,0);assert.equal(stats.expressions,false);
     assert(await page.locator('[data-clip="Run"]').isDisabled());
+    for (const [i,button] of (await page.locator('[data-view]').all()).entries()) {
+      await button.click();
+      await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),`sera-multiview-browser-${i}.png`)});
+    }
     await page.locator('[data-model="sera"]').click();
     await page.waitForFunction(()=>window.__character?.type==='sera');
     const original=await inspect();
     assert.equal(original.colored,original.meshes);assert.equal(original.faces,stats.faces);
     await page.locator('[data-model="projected"]').click();
     await page.waitForFunction(()=>window.__character?.type==='projected');
+    const frontOnly=await inspect();assert.equal(frontOnly.textured,frontOnly.meshes);assert.equal(frontOnly.faces,stats.faces);
+    await page.locator('[data-model="multiview"]').click();
+    await page.waitForFunction(()=>window.__character?.type==='multiview');
     assert.equal(errors.length,0,errors.join('\n'));
-    console.log(JSON.stringify({stats,original,errors}));
+    console.log(JSON.stringify({stats,original,frontOnly,errors}));
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -13,6 +13,20 @@
 
 ## Blender 정면 이미지 투영 실험
 
+### 최신: 뒷면·양쪽 옆면 추가 투영
+
+내장 imagegen으로 정면 이미지의 의상·체형·머리색을 참조한 후면과 양쪽 프로필을 각각 생성했다. `sera-reference-back.png`, `sera-reference-side-left.png`(코가 화면 왼쪽), `sera-reference-side-right.png`(코가 오른쪽)는 실제 알파가 있는 원본 2D 참고 이미지다. 뒷면 디자인은 정면을 바탕으로 새로 추정한 것이다.
+
+```powershell
+& 'C:\Users\USER\AppData\Local\BlenderPortable\blender-4.5.9-windows-x64\blender.exe' --background --python tools/project-sera-texture.py -- --multiview
+```
+
+네 방향을 별도 UV에 투영하고 raycast 가시성·표면 법선·이미지 알파로 가중 평균한다. 가려진 안쪽은 원본 색상을 남긴다. 결과 `sera-multiview.glb`는 4096 PNG를 포함해 약 16.8MB다. `.blend`, `-albedo.png`, `-front.png`, `-angle.png`, `-side.png`, `-side-right.png`, `-back.png`와 `multiview-report.json`도 저장한다. 기존 정면 전용 파일은 덮어쓰지 않는다.
+
+비교 화면은 4방향 결과를 기본 표시하며 이전 정면 전용/원본과 방향 버튼을 제공한다. 실제 3D 렌더에서 후면 머리카락·의상 무늬가 적용됨을 확인했다. **메시 조형은 그대로여서 울퉁불퉁한 실루엣과 투영 무늬의 늘어짐·이음새가 남는다.** 서로 독립 생성한 그림의 비율도 완벽하게 일치하지 않는다. 뼈대·애니메이션·게임 교체는 포함하지 않는다.
+
+### 이전: 정면만 투영
+
 - `tools/project-sera-texture.py`가 원본 GLB의 복사본에 전신 기준 이미지를 투영하고, 4096 UV 텍스처로 베이크해 `sera-projected.glb`에 내보낸다. 사용한 이미지는 기존 `sera-reference-cutout.png`이며 새 AI 이미지는 생성하지 않았다.
 - 원본 모델의 실제 정면은 Blender +X다. +X 방향의 가시성 raycast와 법선 가중치를 사용해 정면에서 가려진 표면과 뒷면에는 원본 색상을 유지한다. 정면 이미지를 모델의 가로/세로 범위에 맞춰 투영하므로 얼굴·손·옷의 위치가 완전히 맞지는 않는다.
 - `sera-projected-albedo.png`: 실제 GLB에 포함된 베이크 텍스처. `sera-projected.blend`: 압축 저장한 편집/검수 원본. `sera-projected-front.png`, `-angle.png`, `-side.png`, `-back.png`는 실제 3D 렌더다.
