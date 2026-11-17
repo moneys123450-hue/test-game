@@ -124,7 +124,12 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
 .tb.down { background-color: rgba(255, 255, 255, 0.3); filter: brightness(1.35); }
 .tb.icon { background-repeat: no-repeat; border-color: var(--c, #fff); }
 .tb.icon.ult { border-color: var(--gold); }
-.tb.wait { opacity: 0.45; }
+.tb .cd { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.tb .num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 900; text-shadow: 0 2px 3px #000; pointer-events: none; }
+.tb.main .num { font-size: 30px; }
+.tb.ready { box-shadow: 0 0 10px -2px var(--c, #fff); }
+.tb:not(.ready) { color: transparent; } /* 대기 중엔 글자 대신 남은 초만 보인다 */
+.tb .num { color: #fff; }
 .tb-mini { position: absolute; pointer-events: auto; top: 10px; width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: #fff; font-size: 18px; }
 #tb-pause { left: 10px; } #tb-score { left: 58px; }
 body.touch #bottom { transform: translateX(-50%) scale(0.62); transform-origin: bottom center; bottom: 4px; }

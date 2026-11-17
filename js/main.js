@@ -113,6 +113,8 @@ function buildHud() {
     if (bg) { Object.assign(el.style, bg); el.textContent = ''; } // 아이콘이 있으면 PC 스킬 칸과 같은 그림을 쓴다
     else if (el.dataset.slot === 'lmb') el.textContent = '공격';
     else if (el.dataset.slot !== 'space') el.textContent = sk.name.length > 4 ? sk.name.replace(' ', '\n') : sk.name;
+    else el.textContent = '회피';
+    el.insertAdjacentHTML('beforeend', '<div class="cd"></div><div class="num"></div>');
   }
   for (const t of [0, 1]) $('tw' + t).innerHTML = '<i></i>'.repeat(4);
 }
@@ -177,6 +179,12 @@ function updateHud() {
     const slot = el.dataset.slot, cd = p.cds[slot], max = p.def.skills[slot].cd * (slot === 'lmb' ? 1 : 1 - p.cdr);
     el.children[el.children.length - 3].style.height = cd > 0 ? `${Math.min(100, (cd / max) * 100)}%` : '0';
     el.children[el.children.length - 2].textContent = cd > 0.5 ? Math.ceil(cd) : '';
+    el.classList.toggle('ready', cd <= 0);
+  }
+  if (touch.on) for (const el of document.querySelectorAll('.tb')) { // 모바일 버튼: PC 스킬 칸과 같은 대기시간 표시
+    const slot = el.dataset.slot, cd = p.cds[slot], max = p.def.skills[slot].cd * (slot === 'lmb' ? 1 : 1 - p.cdr), k = cd > 0 ? Math.min(1, cd / max) : 0;
+    el.querySelector('.cd').style.background = k ? `conic-gradient(rgba(4,6,12,0.78) ${k * 360}deg, transparent 0)` : 'none';
+    el.querySelector('.num').textContent = cd > 0.5 ? Math.ceil(cd) : '';
     el.classList.toggle('ready', cd <= 0);
   }
   $('respawn').classList.toggle('hidden', p.alive || w.over !== null);
@@ -279,7 +287,6 @@ function playerIntent(w, p) {
     if (touch.joy) { const dx = touch.joy.x - touch.joy.ox, dy = touch.joy.y - touch.joy.oy, d = Math.hypot(dx, dy); if (d > 10) { s = dx / d; f = -dy / d; } }
     let manual = false;
     for (const slot in touch.btn) { it.cast[slot] = true; if (touch.btn[slot].moved > 14) manual = true; }
-    for (const el of document.querySelectorAll('.tb')) el.classList.toggle('wait', p.cds[el.dataset.slot] > 0.3);
     const t = !manual && Object.keys(touch.btn).length ? autoTarget(w, p) : null; // 버튼만 누르면 가까운 적 자동 조준
     const aim = t ? { x: t.x + (t.vx || 0) * 0.15, y: t.y + (t.vy || 0) * 0.15 } : r.aimPoint(p);
     it.aimX = aim.x; it.aimY = aim.y;
