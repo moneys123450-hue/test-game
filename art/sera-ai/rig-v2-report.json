@@ -1,0 +1,26 @@
+{
+  "source": "sera-multiview.glb",
+  "source_sha256": "1508b6aa61f6af4d40dd5ca1a41d5c6d234f76baae035a83d17c8b3ebf6659a2",
+  "bones": 50,
+  "vertices": 74460,
+  "faces": 91656,
+  "uv_preserved": true,
+  "max_influences": 4,
+  "clips": {
+    "Idle": {
+      "max_displacement": 0.02840349486263401,
+      "min_z": 6.040974653842568e-08
+    },
+    "Run": {
+      "max_displacement": 0.21059564184435436,
+      "min_z": -4.229294518154347e-06
+    },
+    "Slash": {
+      "max_displacement": 0.26980170212250104,
+      "min_z": 6.040974653842568e-08
+    }
+  },
+  "max_ankle_target_error": 0.004640631607699087,
+  "stance_ankle_height_range": 3.248453140258789e-05,
+  "method": "50-bone anatomical helpers and phased limb solve; fused cloth/hair remain approximate"
+}

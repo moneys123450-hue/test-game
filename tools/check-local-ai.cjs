@@ -20,7 +20,7 @@ const assert = require('node:assert/strict');
     assert.deepEqual(stats.clips,['Idle','Run','Slash']);assert.equal(stats.expressions,false);
     assert(!(await page.locator('[data-clip="Run"]').isDisabled()));
     await page.locator('#skeleton').click();
-    assert(await page.evaluate(()=>__character.skeleton.visible&&__character.skeleton.bones.length===24));
+    assert(await page.evaluate(()=>__character.skeleton.visible&&__character.skeleton.bones.length===50));
     await page.locator('#pause-motion').click();
     const deformation=await page.evaluate(async()=>{
       const THREE=await import('/vendor/three.module.min.js');const c=__character;
@@ -36,6 +36,21 @@ const assert = require('node:assert/strict');
       return result;
     });
     for(const [name,delta] of Object.entries(deformation))assert(delta>.001&&delta<.9,`${name}: ${delta}`);
+    const gait=await page.evaluate(async()=>{
+      const THREE=await import('/vendor/three.module.min.js');const c=__character;const bones={};c.model.traverse(o=>{if(o.isBone)bones[o.name]=o});
+      c.mixer.stopAllAction();c.actions.Run.reset().play();
+      let maxContactError=0,maxLift=0,loopError=0;const first={};
+      for(let i=0;i<=32;i++){
+        c.mixer.setTime(c.actions.Run.getClip().duration*i/32);c.model.updateMatrixWorld(true);
+        for(const [side,offset] of [['R',0],['L',.5]]){
+          const p=(i/32+offset)%1;const pos=bones['foot'+side]?.getWorldPosition(new THREE.Vector3())||bones['foot.'+side].getWorldPosition(new THREE.Vector3());
+          if(i===0)first[side]=pos.clone();if(i===32)loopError=Math.max(loopError,pos.distanceTo(first[side]));
+          if(p<.6)maxContactError=Math.max(maxContactError,Math.abs(pos.y-.13));else maxLift=Math.max(maxLift,pos.y-.13);
+        }
+      }
+      return {maxContactError,maxLift,loopError};
+    });
+    assert(gait.maxContactError<.035&&gait.maxLift>.04&&gait.loopError<.01,JSON.stringify(gait));
     for (const [i,button] of (await page.locator('[data-view]').all()).entries()) {
       await button.click();
       await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),`sera-multiview-browser-${i}.png`)});
@@ -51,9 +66,12 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(()=>window.__character?.type==='multiview');
     const staticFour=await inspect();assert.equal(staticFour.clips.length,0);assert.equal(staticFour.faces,stats.faces);
     assert(await page.locator('#skeleton').isDisabled());
+    await page.locator('[data-model="rigPrevious"]').click();
+    await page.waitForFunction(()=>window.__character?.type==='rigPrevious');
+    assert(await page.evaluate(()=>__character.skeleton.bones.length===24));
     await page.locator('[data-model="rigged"]').click();
     await page.waitForFunction(()=>window.__character?.type==='rigged');
     assert.equal(errors.length,0,errors.join('\n'));
-    console.log(JSON.stringify({stats,deformation,original,frontOnly,staticFour,errors}));
+    console.log(JSON.stringify({stats,deformation,gait,original,frontOnly,staticFour,errors}));
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

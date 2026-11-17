@@ -37,7 +37,7 @@ function play(name) {
 }
 async function load(type) {
   const id = ++request; document.querySelector('#status').textContent = '모델 불러오는 중…';
-  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb', projected: './art/sera-ai/sera-projected.glb', multiview: './art/sera-ai/sera-multiview.glb', rigged: './art/sera-ai/sera-rigged.glb' };
+  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb', projected: './art/sera-ai/sera-projected.glb', multiview: './art/sera-ai/sera-multiview.glb', rigged: './art/sera-ai/sera-rigged-v2.glb', rigPrevious: './art/sera-ai/sera-rigged.glb' };
   try {
     const gltf = await new GLTFLoader().loadAsync(files[type]);
     if (id !== request) return;
@@ -64,7 +64,7 @@ async function load(type) {
     document.querySelectorAll('[data-clip]').forEach((b) => b.disabled = !actions[b.dataset.clip]);
     document.querySelectorAll('[data-model]').forEach((b) => b.classList.toggle('active', b.dataset.model === type));
     document.querySelector('#blink').disabled = !expressions.supported;
-    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 /눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 원본 · 정적 모델 · 뼈대/애니메이션 미적용', projected: '정면 그림만 투영 · 이전 결과', multiview: '정면·뒷면·양쪽 옆면 투영 · 기존 입체 형태 유지 · 정적 모델', rigged: '세라 · 관절 24개 · 대기 / 달리기 / 마법 시전 · 4방향 텍스처 유지' }[type];
+    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 /눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 원본 · 정적 모델 · 뼈대/애니메이션 미적용', projected: '정면 그림만 투영 · 이전 결과', multiview: '정면·뒷면·양쪽 옆면 투영 · 기존 입체 형태 유지 · 정적 모델', rigged: '세라 · 뼈대 50개 · 쇄골 / 비틀림 보조뼈 / 발 디딤 / 옷·머리카락 분절', rigPrevious: '이전 관절 모델 · 뼈대 24개 · 같은 텍스처로 움직임 비교' }[type];
     window.__character = { model, mixer, actions, play, expressions, skeleton, type, expressionOverride: null };
   } catch (e) { document.querySelector('#status').textContent = '모델을 불러오지 못했습니다'; console.error(e); }
 }
