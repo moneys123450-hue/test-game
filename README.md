@@ -30,8 +30,11 @@
 | `js/models.js` | 3D 모델 생성과 동작 | 코드 모델 + GLB 로드·뼈대 복제·애니메이션 전환 |
 | `js/character-style.js` | 캐릭터 재질·눈 깜빡임·시선 | 몸 동작과 독립 재생 |
 | `character.html` | 캐릭터 비교 화면 | 얼굴 확대·동작·표정·직전 모델 비교 |
+| `sera-preview.html` | 세라 제작 비교 화면 | 50개/24개 뼈대·4방향 투영·이전 모델 비교 |
 | `tools/build-kai-anime.py` | Blender 카이 재생성 | 메시·스킨·클립·모프·렌더 |
+| `tools/project-sera-texture.py`, `tools/rig-sera.py` | 세라 텍스처 투영·관절 재생성 | 4방향 atlas, 스킨, 대기·달리기·시전 |
 | `tools/check-character.cjs` | 브라우저 회귀 검증 | 별도 Playwright 설치 필요, HANDOFF 참고 |
+| `tools/check-local-ai.cjs` | 세라 브라우저 검증 | 뼈대·표면 변형·발 디딤·루프·이전 모델 전환 |
 | `js/render3d.js` | Three.js 장면, 3인칭 카메라, 이펙트 | |
 | `js/main.js` | 화면 전환·입력·HUD·루프 | |
 | `tools/sim.mjs` | 봇끼리 한 판을 돌리는 헤드리스 검증 | `node tools/sim.mjs [seed] [난이도 0~2]` |
@@ -42,12 +45,14 @@
 ```
 python3 -m http.server 8000
 ```
-Windows에서는 `npm run dev`도 가능하다. 게임은 `http://127.0.0.1:8000/`, 캐릭터 비교는 `/character.html`에서 연다.
+Windows에서는 저장소 루트에서 `npm run dev`도 가능하다. 게임은 `http://127.0.0.1:8000/`, 카이 비교는 `/character.html`, 세라 비교는 `/sera-preview.html`에서 연다. dev는 로컬 개발 서버를 뜻하며 별도 dev 브랜치나 빌드 복사본은 없다.
 ES 모듈을 쓰므로 `index.html`을 파일로 직접 열면 동작하지 않는다.
 
 ## 에셋
 초상화·아이콘·배경 이미지는 Higgsfield로 생성하며 주소는 `js/assets.js`에 있다. 3D 엔진은 Three.js (`vendor/`, MIT).
 카이는 무료 Blender에서 Python으로 제작한 스킨 GLB를 사용한다. 원본·현재/이전 모델과 렌더는 `art/kai-blender/`에 있으며, 재생성·수정 방법과 한계는 `HANDOFF.md`에 정리했다. 다른 영웅은 코드 모델이다.
+
+세라는 별도 비교 화면에서 로컬 TripoSR 복원→Blender 4방향 그림 투영→50개 뼈대/스킨/동작을 검수한다. 게임의 세라는 아직 코드 모델이다. 기준 그림·현재/이전 GLB·편집 원본·렌더는 `art/sera-ai/`, 제작 순서와 한계는 그 안의 `README.md`에 있다. Blender/TripoSR 설치와 가중치는 제작용이며 저장된 GLB를 보는 데 필요하지 않다.
 
 ## 인수인계
 작업을 이어받을 때는 `HANDOFF.md` 를 먼저 읽는다 (캐릭터 설정, 이미지 프롬프트 양식, 진행 현황).
