@@ -1,0 +1,13 @@
+{
+  "source": "sera-triposr-normalized.glb",
+  "source_sha256": "9ab2fce7dbfd7df567385600e32585299f8262fd33c0b652cfc89d0ccd309446",
+  "reference": "sera-reference-cutout.png",
+  "method": "front orthographic projection, visibility/normal weighted, original colors on back",
+  "atlas": 4096,
+  "vertices": 45824,
+  "faces": 91656,
+  "painted_vertices": 13623,
+  "geometry_changed": false,
+  "rigged": false,
+  "output": "sera-projected.glb"
+}

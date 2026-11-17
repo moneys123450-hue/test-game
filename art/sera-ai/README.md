@@ -11,6 +11,22 @@
 - `http://127.0.0.1:8000/sera-preview.html`: 회전·확대 검수용 화면. 동작 버튼은 비활성화되어 있다.
 - 생성 수치는 `triposr-generation.json`, 도구 라이선스는 `TripoSR-LICENSE`에 있다.
 
+## Blender 정면 이미지 투영 실험
+
+- `tools/project-sera-texture.py`가 원본 GLB의 복사본에 전신 기준 이미지를 투영하고, 4096 UV 텍스처로 베이크해 `sera-projected.glb`에 내보낸다. 사용한 이미지는 기존 `sera-reference-cutout.png`이며 새 AI 이미지는 생성하지 않았다.
+- 원본 모델의 실제 정면은 Blender +X다. +X 방향의 가시성 raycast와 법선 가중치를 사용해 정면에서 가려진 표면과 뒷면에는 원본 색상을 유지한다. 정면 이미지를 모델의 가로/세로 범위에 맞춰 투영하므로 얼굴·손·옷의 위치가 완전히 맞지는 않는다.
+- `sera-projected-albedo.png`: 실제 GLB에 포함된 베이크 텍스처. `sera-projected.blend`: 압축 저장한 편집/검수 원본. `sera-projected-front.png`, `-angle.png`, `-side.png`, `-back.png`는 실제 3D 렌더다.
+- `sera-preview.html`은 기본적으로 투영 후를 열고 **투영 전 원본** 버튼으로 같은 각도에서 비교한다. 뷰어는 Sera 모델의 정면 방향도 보정한다.
+- 텍스처가 있는 재질은 `characterMaterial()`에서 원본 재질을 복제해 map/UV 채널을 유지한다. 기존 버텍스 컬러를 투영 그림에 이중 곱하지 않도록 투영 결과에는 색상 속성을 제거하고, 사용하지 않는 UV 채널도 제거했다.
+- 정점/면 수와 원본 파일 SHA-256 보존을 스크립트에서 검사했다. 원본과 투영 결과는 동일한 91656개 면이다. 세부 기록은 `projection-report.json`에 있다.
+- 정면의 눈·색·무늬는 더 읽히지만 형태는 동일하게 거칠다. 옆면에는 늘어짐/경계가 남고 뒷면은 개선되지 않았다. **형태 수정·리깅·게임 적용은 아니다.**
+
+```powershell
+& 'C:\Users\USER\AppData\Local\BlenderPortable\blender-4.5.9-windows-x64\blender.exe' --background --python tools/project-sera-texture.py
+```
+
+베이크는 emission 색만 저장해 촬영 조명이 텍스처에 추가로 구워지지 않게 했다. 원본 참고 이미지 자체에 있던 명암은 남아 있다. 다시 실행하면 `sera-projected*`만 갱신하며 원본 normalized GLB는 유지한다. 브라우저 회귀 검사는 투영 GLB의 텍스처 로드, 원본과 면 수 동일, 정적 모델 상태와 전/후 전환을 함께 확인한다.
+
 ## 로컬 실행 (계정·구독·내보내기 결제 없음)
 
 실제 환경은 Python 3.13, CPU PyTorch 2.15.0, Transformers 4.49.0이다. 공식 구버전 requirements의 일부 패키지는 Python 3.13용 바이너리가 없어 호환 버전을 사용했다. CUDA 확장 torchmcubes 대신 scikit-image 어댑터를 사용하며 `--self-test`로 좌표 규약을 검사한다. 이 PC의 도구·가상환경은 `%LOCALAPPDATA%\TripoSR`, 모델은 그 아래 `weights`에 있다. 1.7GB 모델과 가상환경은 저장소에 넣지 않는다.

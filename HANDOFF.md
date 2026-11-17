@@ -93,6 +93,8 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 
 ### Blender 카이 현재 상태
 
+세라 이미지 투영 실험: `tools/project-sera-texture.py`로 현재 static GLB의 복사본에 세라 전신 이미지를 +X 정면에서 가시성/법선 가중치로 투영하고 4096 UV atlas로 베이크했다. `art/sera-ai/sera-projected.glb`, `sera-projected.blend`, `sera-projected-albedo.png`, 앞/사선/옆/뒤 렌더와 `projection-report.json`이 결과다. 원본 GLB hash와 메시 정점/면 보존을 검사했다. `sera-preview.html`에서 투영 전/후 전환 가능. `character-style.js`는 textured 재질의 map을 유지하며 투영 GLB의 버텍스 색상 이중 곱을 피했다. 정면 눈/의상 무늬는 개선되지만 거친 입체 형태와 옆면 늘어짐, 뒷면은 해결하지 못했다. 게임 적용/리깅은 하지 않았다. 세부 재현 방법은 `art/sera-ai/README.md` 참조.
+
 세라 무료 로컬 경로 검증(2026-11-17): TripoSR 공개 MIT 모델을 CPU로 실행해 실제 색상 GLB 저장에 성공했다. `art/sera-ai/sera-triposr-local.glb`는 256 해상도·45824 정점·91656 면·약 1.83MB, 모델 로딩 포함 약 42초다. 정규화 GLB/Blender 파일/앞뒤 렌더와 `sera-preview.html`을 추가했다. **얼굴·손·의상 디테일이 뭉개져 사용자 목표 품질에는 미달하고, 리깅/게임 적용은 하지 않았다.** 무료로 저장 가능한 경로 검증 결과와 품질 달성 여부를 구분한다. 재현은 `tools/download-triposr.py`, `tools/generate-sera-local.py`, `tools/preview-ai-model.py` 및 `art/sera-ai/README.md` 참고. 공식 소스/CPU 가상환경/1.7GB weights는 이 PC의 `%LOCALAPPDATA%\TripoSR`에만 있다. 이전 데모 PNG의 검정 배경을 투명으로 오인한 문제를 rembg/u2netp와 알파 범위 검증으로 수정했다. 별도 브라우저 검사는 `tools/check-local-ai.cjs`다. Tripo 웹은 사용자가 H2.5에서도 유료 업그레이드가 요구된다고 확인했으므로 무료 내보내기를 보장하지 않는다.
 
 세라 AI 생성 시도(2026-11-17): `art/sera-ai/sera-reference-front.png`는 내장 imagegen으로 만든 전신 기준 **2D 이미지**다. `tools/generate-sera-ai.py`로 Microsoft 공식 TRELLIS.2 데모의 이미지 전처리는 성공했으나, 실제 3D 생성은 ZeroGPU 할당량 오류로 거절돼 **GLB/리깅/게임 적용은 아직 없다**. 원본 프롬프트와 실행 상태·재개 절차는 `art/sera-ai/README.md`에 기록했다. GTX 1060 3GB라 고해상도 모델 로컬 설치는 하지 않았고 유료 생성도 실행하지 않았다. fal은 발견했으나 연결 미확인이다. 계정 인증/무료 이용량 확인 후 이어간다. 기존 카이 모델은 유지한다.

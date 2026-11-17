@@ -5,6 +5,9 @@ ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
 ramp.generateMipmaps = false; ramp.needsUpdate = true;
 
 export function characterMaterial(source, vertexColors = false) {
+  if (source.map) {
+    const m = source.clone(); m.vertexColors = vertexColors; return m;
+  }
   if (source.name === 'Skin warm porcelain' || source.name === 'Face warm shadow') {
     const m = source.clone(); m.vertexColors = vertexColors;
     m.roughness = .88; m.metalness = 0; return m;
