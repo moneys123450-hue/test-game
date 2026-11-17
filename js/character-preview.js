@@ -22,7 +22,7 @@ ring.rotation.x = Math.PI / 2; ring.position.y = -.004; scene.add(ring);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: '#142031', roughness: 1 }));
 floor.rotation.x = -Math.PI / 2; floor.position.y = -.06; floor.receiveShadow = true; scene.add(floor);
 
-let model, mixer, expressions, actions = {}, current, request = 0, paused = false;
+let model, mixer, expressions, skeleton, actions = {}, current, request = 0, paused = false;
 let angle = .45, pitch = .13, distance = 4.2, targetY = 1.05, elapsed = 0, blinkStart = -10;
 function resize() {
   const h = Math.max(230, innerHeight - document.querySelector('.tools').offsetHeight - 38);
@@ -37,11 +37,12 @@ function play(name) {
 }
 async function load(type) {
   const id = ++request; document.querySelector('#status').textContent = '모델 불러오는 중…';
-  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb', projected: './art/sera-ai/sera-projected.glb', multiview: './art/sera-ai/sera-multiview.glb' };
+  const files = { anime: './art/kai-blender/kai-anime.glb?v=detail2', previous: './art/kai-blender/kai-anime-v1.glb', block: './art/kai-blender/kai-prototype.glb', sera: './art/sera-ai/sera-triposr-normalized.glb', projected: './art/sera-ai/sera-projected.glb', multiview: './art/sera-ai/sera-multiview.glb', rigged: './art/sera-ai/sera-rigged.glb' };
   try {
     const gltf = await new GLTFLoader().loadAsync(files[type]);
     if (id !== request) return;
     if (model) {
+      if (skeleton) { scene.remove(skeleton); skeleton.dispose(); skeleton = null; }
       scene.remove(model); if (mixer) mixer.stopAllAction();
       model.traverse((o) => { o.geometry?.dispose(); for (const m of o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []) m.dispose(); });
     }
@@ -54,12 +55,17 @@ async function load(type) {
       o.material = Array.isArray(o.material) ? o.material.map(style) : style(o.material);
     });
     scene.add(model); mixer = new THREE.AnimationMixer(model); expressions = createExpressions(model);
+    if (document.querySelector('#skeleton')) {
+      skeleton = new THREE.SkeletonHelper(model); skeleton.material.depthTest = false; skeleton.renderOrder = 10;
+      skeleton.visible = document.querySelector('#skeleton').getAttribute('aria-pressed') === 'true'; scene.add(skeleton);
+      document.querySelector('#skeleton').disabled = skeleton.bones.length === 0;
+    }
     actions = {}; current = null; for (const c of gltf.animations) actions[c.name] = mixer.clipAction(c); play('Idle');
     document.querySelectorAll('[data-clip]').forEach((b) => b.disabled = !actions[b.dataset.clip]);
     document.querySelectorAll('[data-model]').forEach((b) => b.classList.toggle('active', b.dataset.model === type));
     document.querySelector('#blink').disabled = !expressions.supported;
-    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 /눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 원본 · 정적 모델 · 뼈대/애니메이션 미적용', projected: '정면 그림만 투영 · 이전 결과', multiview: '정면·뒷면·양쪽 옆면 투영 · 기존 입체 형태 유지 · 정적 모델' }[type];
-    window.__character = { model, mixer, actions, play, expressions, type, expressionOverride: null };
+    document.querySelector('#status').textContent = { anime: '개선 모델 · 얼굴 곡면 / 시선 /눈 깜빡임 / 의상 디테일', previous: '직전 버전 · 첫 곡면 캐릭터', block: '초기 버전 · 블록 시제품', sera: '로컬 AI 원본 · 정적 모델 · 뼈대/애니메이션 미적용', projected: '정면 그림만 투영 · 이전 결과', multiview: '정면·뒷면·양쪽 옆면 투영 · 기존 입체 형태 유지 · 정적 모델', rigged: '세라 · 관절 24개 · 대기 / 달리기 / 마법 시전 · 4방향 텍스처 유지' }[type];
+    window.__character = { model, mixer, actions, play, expressions, skeleton, type, expressionOverride: null };
   } catch (e) { document.querySelector('#status').textContent = '모델을 불러오지 못했습니다'; console.error(e); }
 }
 document.querySelectorAll('[data-model]').forEach((b) => b.onclick = () => load(b.dataset.model));
@@ -70,6 +76,9 @@ document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
   angle = Number(b.dataset.view); distance = 4.2; targetY = 1.05; pitch = .04;
 });
 document.querySelector('#blink').onclick = () => { blinkStart = elapsed; };
+document.querySelector('#skeleton')?.addEventListener('click', (e) => {
+  if (skeleton) { skeleton.visible = !skeleton.visible; e.currentTarget.setAttribute('aria-pressed', skeleton.visible); }
+});
 document.querySelector('#pause-motion').onclick = (e) => {
   paused = !paused; e.currentTarget.textContent = paused ? '계속 재생' : '일시정지'; e.currentTarget.setAttribute('aria-pressed', paused);
 };

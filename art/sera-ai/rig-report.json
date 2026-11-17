@@ -1,0 +1,24 @@
+{
+  "source": "sera-multiview.glb",
+  "source_sha256": "1508b6aa61f6af4d40dd5ca1a41d5c6d234f76baae035a83d17c8b3ebf6659a2",
+  "bones": 24,
+  "vertices": 74460,
+  "faces": 91656,
+  "uv_preserved": true,
+  "max_influences": 4,
+  "clips": {
+    "Idle": {
+      "max_displacement": 0.024591225200216688,
+      "min_z": 5.0299991727342785e-08
+    },
+    "Run": {
+      "max_displacement": 0.2514385786404731,
+      "min_z": 5.0299991727342785e-08
+    },
+    "Slash": {
+      "max_displacement": 0.28954771114220607,
+      "min_z": 5.0299991727342785e-08
+    }
+  },
+  "method": "spatial segment skinning, fused cloth/hair remain approximate"
+}

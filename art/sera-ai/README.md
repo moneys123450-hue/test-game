@@ -1,8 +1,24 @@
 # 세라 AI 3D 제작 — 무료 CPU 변환 검증
 
-**로컬 TripoSR로 색상이 포함된 GLB 생성·저장과 Blender 열람을 확인했다.** 다만 얼굴·손·머리카락·의상 디테일이 많이 뭉개져 원하는 세라 품질에는 미달한다. 뼈대와 애니메이션도 없다. 게임의 캐릭터 모델은 교체하지 않았다. 원본 이미지는 별개의 2D 파일이다.
+**로컬 TripoSR GLB에 4방향 그림 투영과 24개 뼈대·세 가지 동작을 추가했다.** 비교 화면에서 확인할 수 있다. 얼굴·손·머리카락·의상 조형은 거칠고 움직임에 늘어짐이 남아 원하는 세라 품질에는 미달한다. 게임의 캐릭터 모델은 교체하지 않았다. 원본 이미지는 별개의 2D 파일이다.
 
 ## 실제 저장된 결과
+
+### 최신 관절 모델
+
+`tools/rig-sera.py`가 `sera-multiview.glb`의 텍스처와 UV를 보존한 채 24개 뼈대와 스킨 가중치를 추가한다. 몸통/목/머리, 어깨/팔꿈치/손목, 골반/무릎/발목, 옷자락과 2단 머리카락 구조다. 정점마다 최대 4개 가중치를 정규화하며 UV 동일, 원본 hash 보존과 세 클립의 유한한 실제 변형을 assert로 검사한다. 앞쪽 축만 카이와 동일하게 변환한다.
+
+```powershell
+& 'C:\Users\USER\AppData\Local\BlenderPortable\blender-4.5.9-windows-x64\blender.exe' --background --python tools/rig-sera.py
+```
+
+출력은 `sera-rigged.glb`, 압축 `.blend`, `sera-rigged-idle.png`, `-run.png`, `-slash.png`, `rig-report.json`이다. Idle/Run/Slash는 기존 뷰어와 호환되는 이름이며 Slash 동작은 마법 시전이다. Blender 편집 파일은 NLA 트랙을 mute한 기본 자세로 저장한다. 트랙을 켜거나 해당 Action을 선택해 편집한다. 독립 클립을 GLB로 내보낼 때 strip influence=1, action slot 지정을 유지한다.
+
+`sera-preview.html`은 이 관절 모델을 기본 표시한다. 동작 버튼과 관절 보기, 네 방향 시점 및 이전 정적 모델 비교를 지원한다. 브라우저 검사 `tools/check-local-ai.cjs`는 다시 불러온 GLB의 24개 뼈대와 세 클립에서 표면 정점이 움직이는지도 검사한다.
+
+**메시 자체가 소매·머리카락·몸이 붙은 구조이므로 공간 기반 스킨 가중치만으로 완전히 분리해 움직이지 않는다.** 큰 동작의 늘어짐/겹침이 남아 시전 폭을 줄였다. 얼굴 모프/손가락/물리 천/발 고정 IK는 없다. 게임 캐릭터 교체는 하지 않았으며 기존 정적 모델과 투영 파일을 보존한다.
+
+### 이전 정적 모델
 
 - `sera-triposr-local.glb`: 로컬 CPU 생성 원본, 256 해상도, 45824개 정점/91656개 면, 약 1.83MB. 모델 로딩 포함 생성 약 42초.
 - `sera-triposr-normalized.glb`: Blender에서 축 방향·크기를 보정한 2m 높이 미리보기용 모델.

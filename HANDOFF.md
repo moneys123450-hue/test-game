@@ -93,6 +93,8 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 
 ### Blender 카이 현재 상태
 
+세라 관절/동작(2026-11-17): `tools/rig-sera.py`가 4방향 투영 GLB를 복사해 카이와 같은 정면 축(Blender -Y/glTF +Z)으로 맞추고 24개 뼈대(몸통·목·머리·양팔·손·양다리·발·옷자락·2단 머리카락), 정점당 최대 4개 정규화 가중치를 만든다. `sera-rigged.glb`/`.blend`, Idle/Run/Slash 렌더, `rig-report.json`을 저장한다. 텍스처/UV/정점·면 수/원본 hash를 보존한다. Slash는 칼질이 아닌 마법 시전 제스처다. `sera-preview.html` 기본 모델로 연결했고 대기/달리기/마법 시전, 관절 보기, 전후 비교가 가능하다. `tools/check-local-ai.cjs`는 GLB 재로드 후 24개 뼈대와 실제 스킨 정점 변형, 모든 이전 버전 전환을 검사한다. 공간 기반 스킨 가중치라 붙어 있는 소매·머리카락·몸은 큰 동작에서 늘어짐/겹침이 남는다. 손가락/얼굴 모프/물리 천/발 고정 IK는 없다. **게임 세라는 아직 기존 모델이며 이번 적용 범위는 비교 화면이다.**
+
 세라 4방향 투영(2026-11-17): 내장 imagegen으로 정면 기준 의상에 맞춘 `sera-reference-back.png`, `sera-reference-side-left.png`, `sera-reference-side-right.png`를 생성했다. `tools/project-sera-texture.py -- --multiview`로 정면(+X)/후면(-X)/양쪽 옆면(±Y)을 가시성·법선·알파 가중 평균으로 합쳐 4096 atlas에 베이크했다. 결과는 `art/sera-ai/sera-multiview.glb`(약 16.8MB), `.blend`, `-albedo.png`, 정면/사선/양옆/후면 렌더 및 `multiview-report.json`. 원본·이전 정면 투영 파일을 보존한다. `sera-preview.html` 기본값은 4방향 투영이며 이전 정면 투영/원본 비교와 방향 버튼이 있다. 기존 45824 정점·91656 면·2m 크기와 원본 SHA 보존을 검사했다. 뒷면/옆면 그림이 적용되지만 메시의 울퉁불퉁함과 이미지 간 불일치/늘어짐은 남는다. 리깅·게임 모델 교체는 하지 않았다. `tools/check-local-ai.cjs`가 세 모델 전환·텍스처·같은 면 수·방향 버튼을 검사한다.
 
 세라 이미지 투영 실험: `tools/project-sera-texture.py`로 현재 static GLB의 복사본에 세라 전신 이미지를 +X 정면에서 가시성/법선 가중치로 투영하고 4096 UV atlas로 베이크했다. `art/sera-ai/sera-projected.glb`, `sera-projected.blend`, `sera-projected-albedo.png`, 앞/사선/옆/뒤 렌더와 `projection-report.json`이 결과다. 원본 GLB hash와 메시 정점/면 보존을 검사했다. `sera-preview.html`에서 투영 전/후 전환 가능. `character-style.js`는 textured 재질의 map을 유지하며 투영 GLB의 버텍스 색상 이중 곱을 피했다. 정면 눈/의상 무늬는 개선되지만 거친 입체 형태와 옆면 늘어짐, 뒷면은 해결하지 못했다. 게임 적용/리깅은 하지 않았다. 세부 재현 방법은 `art/sera-ai/README.md` 참조.
