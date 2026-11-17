@@ -27,7 +27,11 @@
 | `js/data.js` | 영웅·스킬·맵·규칙 수치, 3D 외형 명세 | 데이터 (밸런스·외형 조정은 여기만) |
 | `js/world.js` | 시뮬레이션 + 스킬 효과 인터프리터 | 범용 엔진 (DOM·렌더러 비의존) |
 | `js/ai.js` | 봇 조종 | 규칙 기반 자동화 (스킬 메타데이터 참조) |
-| `js/models.js` | 3D 모델 생성과 동작 | 외형 명세를 해석해 도형으로 조립 |
+| `js/models.js` | 3D 모델 생성과 동작 | 코드 모델 + GLB 로드·뼈대 복제·애니메이션 전환 |
+| `js/character-style.js` | 캐릭터 재질·눈 깜빡임·시선 | 몸 동작과 독립 재생 |
+| `character.html` | 캐릭터 비교 화면 | 얼굴 확대·동작·표정·직전 모델 비교 |
+| `tools/build-kai-anime.py` | Blender 카이 재생성 | 메시·스킨·클립·모프·렌더 |
+| `tools/check-character.cjs` | 브라우저 회귀 검증 | 별도 Playwright 설치 필요, HANDOFF 참고 |
 | `js/render3d.js` | Three.js 장면, 3인칭 카메라, 이펙트 | |
 | `js/main.js` | 화면 전환·입력·HUD·루프 | |
 | `tools/sim.mjs` | 봇끼리 한 판을 돌리는 헤드리스 검증 | `node tools/sim.mjs [seed] [난이도 0~2]` |
@@ -38,10 +42,12 @@
 ```
 python3 -m http.server 8000
 ```
+Windows에서는 `npm run dev`도 가능하다. 게임은 `http://127.0.0.1:8000/`, 캐릭터 비교는 `/character.html`에서 연다.
 ES 모듈을 쓰므로 `index.html`을 파일로 직접 열면 동작하지 않는다.
 
 ## 에셋
 초상화·아이콘·배경 이미지는 Higgsfield로 생성하며 주소는 `js/assets.js`에 있다. 3D 엔진은 Three.js (`vendor/`, MIT).
+카이는 무료 Blender에서 Python으로 제작한 스킨 GLB를 사용한다. 원본·현재/이전 모델과 렌더는 `art/kai-blender/`에 있으며, 재생성·수정 방법과 한계는 `HANDOFF.md`에 정리했다. 다른 영웅은 코드 모델이다.
 
 ## 인수인계
 작업을 이어받을 때는 `HANDOFF.md` 를 먼저 읽는다 (캐릭터 설정, 이미지 프롬프트 양식, 진행 현황).

@@ -3,7 +3,7 @@
 이 저장소 작업을 이어받는 AI 어시스턴트(모델 무관)를 위한 문서다. 작업을 시작하기 전에 끝까지 읽는다.
 상태가 바뀌면 **4장(이미지 진행 현황)** 을 갱신하고 커밋한다.
 
-마지막 갱신: 2026-11-17 11:30 KST (골드·상점·아이템·귀환 추가)
+마지막 갱신: 2026-11-17 KST (Codex: Blender 카이·표정·애니메이션·비교 화면, Ponytail, 검증과 재생성 인수인계)
 
 ---
 
@@ -11,7 +11,7 @@
 
 - 사용자 요청: "싸이퍼즈와 비슷한 액션형 AOS 게임"을 웹으로 배포하고 계속 수정해 나간다. 이미지는 Higgsfield MCP로 생성한다.
 - 결과물: 3 vs 3 **3D 3인칭 숄더뷰** 액션 AOS **ECLIPSE ARENA**. 빌드 과정 없는 정적 사이트(HTML + ES 모듈 + Three.js, `vendor/` 에 포함).
-- 사용자 결정(11/16): 시점은 3인칭 숄더뷰, 캐릭터는 **코드로 만든 로우폴리 3D 모델**. 처음 만든 2D 탑다운 판은 폐기했다.
+- 현재 시점은 3인칭 숄더뷰. 카이는 **Blender에서 제작한 스킨 GLB**를 사용하고, 리라·브롬·세라는 코드로 만든 로우폴리다. 처음 만든 2D 탑다운 판은 폐기했다.
 - 저장소: `moneys123450-hue/test-game`, 브랜치 `main` 에 직접 푸시한다.
 - 배포: Render Static Site (Build Command 없음, Publish Directory `.`). **main 에 푸시하면 자동 재배포**된다.
 - 사용자 선호: 한국어 응답, 분석적 어조, 칭찬 금지. 하드코딩 규칙 추가보다 일반화된 구조를 우선한다.
@@ -19,7 +19,7 @@
 ### 지켜야 할 제약
 
 1. **기존 게임의 캐릭터·이름·로고·디자인을 가져오지 않는다.** 장르만 참고하고 캐릭터는 전부 자체 설정(2장)이다. 이미지 프롬프트에 다른 게임·작품의 이름을 넣지 않는다.
-2. 영웅·스킬·수치·**3D 외형(`look`)** 은 `js/data.js` 만 고친다. `js/world.js`(엔진)와 `js/ai.js`(봇)는 데이터를 해석하는 범용 코드이므로, 영웅 하나를 위해 분기문을 추가하지 않는다. 새 동작이 필요하면 효과 프리미티브를 추가한다.
+2. 영웅·스킬·수치·모델 선택과 기본 도형의 외형 명세(`look`)는 `js/data.js`에서 관리한다. GLB의 실제 형태는 Blender 제작 스크립트에서 수정한다. `js/world.js`(엔진)와 `js/ai.js`(봇)는 데이터를 해석하는 범용 코드이므로, 영웅 하나를 위해 분기문을 추가하지 않는다. 새 동작이 필요하면 효과 프리미티브를 추가한다.
 3. 봇은 규칙 기반 자동화다(AI 추론 아님). 설명할 때 이 구분을 유지한다.
 4. 변경 후에는 6장의 검증 절차를 돌린 뒤 푸시한다.
 
@@ -81,27 +81,63 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 - **3D 모델 생성(`generate_3d`)은 무제한 대상이 아니다.** 캐릭터 한 명에 34~44크레딧(리깅 포함 기준)이 든다. 사용자가 크레딧을 충전하고 명시적으로 요청하기 전에는 쓰지 않는다.
 - 한 턴 안에서 계속 기다리지 않는다. `mcp__claude-code-remote__send_later` 로 30분 뒤 점검을 예약하고, 예약 메시지에 **진행 중 job id 와 다음에 할 일**을 적는다.
 
-### 이 작업 환경의 한계
+### 이전 환경의 한계와 현재 확인 상태
 
-- 샌드박스에서 `d8j0ntlcm91z4.cloudfront.net`(결과 CDN) 접속이 정책상 차단되어 있다. **이미지를 내려받을 수도, 직접 볼 수도 없다.** 우회하지 않는다.
+- 이전 Claude 환경에서는 결과 CDN 접속이 차단되어 있었다. 현재 로컬 Codex 환경에서는 세라 PNG 다운로드와 직접 열람을 확인했다. 환경마다 다르므로 가능한 도구·권한을 확인하고, 실제 차단이 있으면 우회하지 않는다.
 - 그래서 게임은 CDN 주소를 직접 불러온다(`js/assets.js`). 체험 종료 후 주소가 유지되는지는 미확인이다. 사용자가 파일을 저장소 `assets/` 에 올려 주면 `assets.js` 의 주소를 상대 경로로 바꾼다.
-- 이미지 품질·방향·시트 칸 분할은 **사용자가 배포 화면에서 확인해 줘야 한다.** 보고할 때 미검증이라고 밝힌다.
+- 세라 초상화와 Blender 카이 렌더·로컬 게임은 직접 확인했다. 원격에서 병합한 스킬 시트 16개 각각의 칸·내용은 이번 Codex 작업에서 시각 검수하지 않았다. 외부 생성 작업을 이 문서만 보고 자동 재제출하지 않는다.
 
 ---
 
 ## 4. 이미지 진행 현황
 
-### Blender 카이 로컬 시제품 (2026-11-17)
+### Blender 카이 현재 상태
 
-디테일 개선판: 얼굴 곡면에 맞춘 눈, 피부 버텍스 컬러, 세분화한 머리카락, 의상 주름·봉제선, 손잡이를 감싼 손과 부츠 밑창을 추가했다. Blink/LookLeft/LookRight 모프는 `js/character-style.js`에서 독립 재생한다. 피부·의상·금속 재질도 이 모듈이 관리한다. 달리기는 접지/회수 발 궤적과 2관절 계산을 사용하며, 베기는 골반과 허리 회전을 수정했다. `js/character-preview.js`가 비교 화면을 담당한다. 직전 GLB는 `kai-anime-v1.glb`, 게임 비교는 `?model=previous`, 초기 블록 모델은 `?model=block`. Chromium에서 세 모프, 표정·뼈대 인스턴스 독립성, Idle/Run/Slash, 직전 모델 비교, 발 궤적과 브라우저 예외 없음 확인. 문법 검사와 시드 1·2 시뮬레이션 검증.
+**이번 제작은 이미지→3D 생성 API가 아니라, Codex가 Blender Python으로 메시·재질·뼈대·동작을 작성하고 Blender에서 실행한 방식이다. Blender MCP는 설치하지 않았고, 유료 생성 API·외부 캐릭터 에셋도 사용하지 않았다.** PNG는 결과 확인용 렌더이며 실제 게임은 GLB를 불러온다.
 
-업데이트: 기본 모델을 `kai-anime.glb`로 교체했다. 곡면 인체·얼굴·겹친 머리카락·코트·스카프와 19개 뼈대, 스킨 가중치, Idle/Run/Slash 클립을 포함한다. `tools/build-kai-anime.py`로 재생성한다. `models.js`는 SkeletonUtils로 인스턴스별 뼈대를 복제하고 AnimationMixer로 상태별 클립을 재생한다. toon 재질 사용. `character.html`에서 회전·얼굴 확대·동작 재생·이전 모델 비교 가능. 이전 GLB는 `look.modelPrevious`와 `?model=block`로 보존했다. `?model=original`도 유지한다. Chromium에서 뼈대 로드, 각 캐릭터의 독립성, Idle/Run/Slash 전환, 이전 모델 비교와 브라우저 예외 없음 확인. 시드 1·2 시뮬레이션 통과.
+- 현재 모델: `art/kai-blender/kai-anime.glb` (약 2MB), 편집 원본: `kai-anime.blend`. 19개 뼈대, 스킨 가중치, `Idle`/`Run`/`Slash` 클립, `Blink`/`LookLeft`/`LookRight` 모프.
+- 얼굴 곡면에 맞춘 눈·홍채·눈꺼풀, 피부 버텍스 컬러, 겹친 머리카락, 의상 주름·봉제선, 손잡이를 감싼 손, 부츠 밑창을 포함한다. 피부는 부드러운 재질, 의상은 단계 명암, 금속은 반사 재질이다.
+- `js/data.js`의 `look.model`이 모델을 지정한다. `models.js`는 SkeletonUtils로 뼈대를 개별 복제하고 AnimationMixer로 이동/공격 상태에 맞는 클립을 전환한다. 모프와 재질은 `js/character-style.js`가 관리한다. 인스턴스 사이에 뼈대·모프 상태를 공유하지 않는다.
+- `character.html` + `js/character-preview.js`: 회전, 얼굴 확대, 대기/달리기/베기, 눈 깜빡임, 일시정지, 직전/초기 모델 비교.
+- Three.js r170의 GLTFLoader, BufferGeometryUtils, SkeletonUtils를 `vendor/`에 추가했다. 기존 THREE-LICENSE를 따른다.
+- 다른 영웅은 기존 코드 모델이다. GLB 로드에 실패하면 코드 모델을 유지한다.
 
-- `art/kai-blender/`에 Blender 원본, GLB, 앞·뒤 렌더와 설명을 추가했다. 재생성은 `tools/build-kai.py`를 Blender에서 실행한다. 유료 API는 사용하지 않는다.
-- `HEROES.kai.look.model`로 GLB를 선택하고 `models.js`가 로드한다. 이름으로 팔·다리를 기존 동작 피벗에 연결한다. 스켈레톤 애니메이션은 없다. 실패 시 기존 모델 유지.
-- Three.js r170 GLTFLoader 및 BufferGeometryUtils를 vendor에 추가했다 (기존 THREE-LICENSE 적용).
-- `npm run dev`: 127.0.0.1:8000. `?model=original`로 기존 모델 비교 가능.
-- 문법 검사, 시드 1·2 봇 시뮬레이션, Chromium에서 GLB 표시·이동/스킬 입력·기존 모델 비교 확인. 브라우저 예외 없음.
+| 로컬 주소 | 내용 |
+|---|---|
+| `http://127.0.0.1:8000/` | 현재 모델로 게임 |
+| `http://127.0.0.1:8000/character.html` | 캐릭터 비교 화면 |
+| `http://127.0.0.1:8000/?model=previous` | 직전 곡면 모델 `kai-anime-v1.glb` |
+| `http://127.0.0.1:8000/?model=block` | 초기 Blender 블록 모델 `kai-prototype.glb` |
+| `http://127.0.0.1:8000/?model=original` | 최초 코드 모델 |
+
+### 작업 방식·재생성·진행 팁
+
+1. 게임/비교 화면에서 문제를 확인하고, 외형 문제는 `tools/build-kai-anime.py`, 재질·표정은 `js/character-style.js`, 게임 상태와 동작 연결은 `js/models.js`에서 수정한다. 영웅별 모델 선택과 수치는 `data.js`에 둔다.
+2. 저장소 루트에서 다음 명령으로 재생성한다. **같은 이름의 GLB/BLEND/렌더를 덮어쓰므로, Blender에서 수동 편집한 파일은 별도 파일명으로 저장한 뒤 실행한다.**
+
+   ```powershell
+   & 'C:\Users\USER\AppData\Local\BlenderPortable\blender-4.5.9-windows-x64\blender.exe' --background --python tools/build-kai-anime.py
+   ```
+
+   이 경로는 이 PC의 Blender 4.5.9 LTS 포터블 설치 위치다. 다른 PC에서는 설치한 `blender` 실행 파일로 바꾼다. Blender 자체는 저장소에 포함하지 않는다. `tools/build-kai.py`는 초기 블록 모델용이며 최신 모델을 만드는 스크립트가 아니다.
+3. 출력: `kai-anime.glb`, `kai-anime.blend`, `kai-anime-front.png`, `kai-anime-back.png`, `kai-anime-face.png`. 스튜디오 렌더와 실제 게임의 조명은 다르므로 **둘 다 확인**한다. `kai-detail-*.png`는 브라우저 검증 당시 화면이다.
+4. `.blend`는 촬영을 위해 NLA 트랙을 mute한 상태다. 동작을 편집할 때 해당 트랙을 활성화한다. 모프는 Shape Keys에서 확인한다. 스크립트는 NLA 트랙을 활성화해 GLB로 내보낸다.
+5. Blender의 정면은 -Y, 위는 Z다. glTF 변환 후 +Z 정면이 되어 게임에서 Y축 +90도로 보정한다. 게임 정면은 +X다. 아래로 향하는 팔다리 뼈의 로컬 축과 위로 향하는 척추의 회전축을 혼동하지 않는다.
+6. 눈·홍채를 구체로 덧붙이면 돌출되어 보인다. 얼굴 곡면 깊이에 맞춘 패치를 사용한다. 눈을 감을 때 흰자·홍채는 피부 뒤로 숨기고 속눈썹 선은 남겨야 한다. 모든 부위를 같은 평면으로 겹치면 깜빡임에 줄무늬가 생긴다.
+7. 피부 버텍스 컬러를 유지하려면 브라우저 재질의 `vertexColors`를 켠다. 모든 재질을 동일한 toon 재질로 바꾸면 피부색과 금속 차이가 사라질 수 있다.
+8. 여러 부품을 가중치/재질을 유지하며 합쳐 렌더 호출을 줄였다. 뼈대 복제에는 일반 `scene.clone()` 대신 SkeletonUtils를 사용한다. 기본 도형 모델의 흔들림을 스킨 모델에 중복 적용하지 않는다.
+9. 그림자 줄무늬가 생기면 먼저 light의 bias/normalBias와 모델 크기를 확인한다. 뷰어는 그림자 bias와 캔버스 높이를 조절해 버튼이 발을 가리지 않도록 했다.
+10. 프롬프트 한 문장을 반복해서 던진 것이 아니라, 스크립트를 수정→모델 전체 재생성→렌더/게임 검수하는 과정을 반복했다. 같은 스크립트는 현재 형태를 재현한다. 다음에는 정면/측면/후면 기준 이미지, 체형·얼굴·의상·색·동작·성능 목표를 먼저 확정하면 불필요한 외형 변경을 줄일 수 있다. 초상화 대비 “70%”는 측정한 품질 수치가 아니다.
+
+작업 순서를 사용자에게 매번 승인받아야 하는 것은 아니다. 요구한 품질까지 초안→검수→수정을 내부적으로 진행한다. 첫 모델이 단순했던 것은 Blender의 필수 제약이 아니라 이번 구현을 도형 조합으로 시작한 선택의 결과다. 최종 스크립트를 한 번 실행하면 현재 모델을 재현할 수 있지만, 짧은 자연어 프롬프트만으로 어떤 도구에서나 같은 품질이 보장되지는 않는다. 전문 제작과 AI 생성은 구분해서 설명한다. Blender의 [모델링 안내](https://docs.blender.org/manual/en/5.0/modeling/meshes/introduction.html), Meshy의 [생성 방식 비교](https://docs.meshy.ai/en/webapp/guides/choosing/generation-method)와 [입력·재시도·후처리 안내](https://help.meshy.ai/en/articles/9996860-how-to-use-meshy-image-to-3d)를 참고한다. 외부 서비스의 현재 무료 범위와 약관은 사용 전에 재확인한다.
+
+### Ponytail과 로컬 환경
+
+- 저장소 `AGENTS.md`에 Ponytail 개발 원칙과 기존 인수인계 우선 확인 규칙을 추가했다. 라이선스는 `PONYTAIL-LICENSE`다.
+- 이 PC에만 Ponytail 5.3.3 Codex 플러그인(스킬 6개), 기본 모드 `full`을 설치했다. 활성화와 훅 3개의 신뢰 저장, 새 세션 프롬프트에 규칙 포함을 확인했다. **이 사용자 설정과 플러그인은 git clone으로 다른 PC에 설치되지 않는다.**
+- 필요하면 별도로 `codex plugin marketplace add DietrichGebert/ponytail`, `codex plugin add ponytail@ponytail`을 사용하고 그 환경의 훅 신뢰 상태를 확인한다. `.codex/config.toml`이나 인증 파일을 저장소에 커밋하지 않는다.
+- PowerShell에서는 경로에 `[]`와 공백이 있으므로 `Set-Location -LiteralPath`와 절대 경로를 사용한다. `python`/`node`는 사용 가능하며 이 PC에서는 winget이 없었다.
+- 원격 `main`의 스킬 아이콘 추가 커밋 `0d6a0db`를 병합했다. 다른 작업자 변경을 보존하고, 푸시 전 항상 fetch와 diff를 확인한다. 강제 푸시는 사용하지 않는다.
 
 프롬프트 원문과 설정은 `tools/asset-prompts.json` 에 순서대로 들어 있다.
 
@@ -138,14 +174,14 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 | `title` | 타이틀 화면 배경 | 16:9, 가운데는 어둡고 비어 있게 |
 | `ground` | 3D 바닥 텍스처 | 이음매 없이 반복되는 어두운 타일. **WebGL 텍스처라 CDN 이 CORS 를 허용해야만 적용된다.** 실패하면 코드로 그린 바닥이 유지된다 |
 
-3D 전환으로 `hero_<id>`, `tower*`, `core*`, `minion*` 스프라이트 키는 더 이상 쓰지 않는다. 캐릭터·건물·미니언은 `js/models.js` 가 코드로 만든다.
+3D 전환으로 `hero_<id>`, `tower*`, `core*`, `minion*` 스프라이트 키는 더 이상 쓰지 않는다. 카이는 GLB, 나머지 캐릭터·건물·미니언은 `js/models.js`가 코드로 만든다.
 
 키가 없거나 로드에 실패하면 렌더러가 도형으로 대체하므로 게임은 항상 동작한다.
 
 ### 문제가 보고됐을 때
 
 - **시트 칸이 어긋나 아이콘·초상화가 잘림**: 해당 항목만 단독 이미지로 다시 뽑는다 (5장 양식).
-- **3D 캐릭터 외형 수정 요청**: `data.js` 의 `look` 값(색, 머리 모양, 무기, 크기)을 고친다. 새 무기·머리 모양이 필요하면 `models.js` 의 `WEAPONS` 나 머리 분기에 종류를 추가한다.
+- **3D 캐릭터 외형 수정 요청**: GLB 카이는 위 재생성 절차를 따른다. 코드 모델은 `data.js`의 `look`을 수정하고, 새 종류가 필요하면 `models.js`의 범용 모델 생성기에 추가한다. `look`의 색만 바꾸어도 이미 구워진 GLB의 머리·의상이 바뀌지는 않는다.
 
 ---
 
@@ -205,7 +241,10 @@ Clean cel-shaded game asset style with bold dark outlines, fully transparent bac
 | `js/assets.js` | 이미지 주소 목록, 시트 칸 계산, 로더 |
 | `js/world.js` | 시뮬레이션과 스킬 해석기. **2D 평면 로직, DOM·렌더러 비의존** (3D 는 표시만 담당) |
 | `js/ai.js` | 봇. `hero.intent` 만 채운다 (플레이어와 같은 인터페이스) |
-| `js/models.js` | 3D 모델 생성기. 도형 조합으로 영웅·미니언·타워·코어를 만들고 걷기·공격 동작을 코드로 움직인다 |
+| `js/models.js` | 코드 모델 생성 + GLB 로드·스켈레톤 복제·AnimationMixer 상태 전환 |
+| `js/character-style.js` | 피부·의상·금속 재질, 독립된 눈 깜빡임·시선 모프 |
+| `character.html`, `js/character-preview.js` | 캐릭터 외형·표정·동작·이전 버전 비교 |
+| `tools/build-kai-anime.py` | 최신 Blender 카이·뼈대·모프·클립·렌더 재생성 |
 | `js/render3d.js` | Three.js 장면, 3인칭 카메라, 이펙트, 체력바 오버레이 |
 | `js/minimap.js` | 미니맵 (2D 캔버스) |
 | `js/main.js` | 화면 전환, 키보드·마우스(포인터 잠금)·터치 입력, HUD, 루프 |
@@ -234,6 +273,19 @@ python3 -m http.server 8000   # 브라우저 확인 (ES 모듈이라 파일로 �
 # window.__game 으로 상태에 접근할 수 있다 (예: __game.renderer.look(dx, dy) 로 시점 회전).
 ```
 
+Windows에서는 `npm run dev`로 서버를 띄워도 된다. 브라우저 회귀 검증은 `tools/check-character.cjs`에 보존했다. 별도 터미널에서 서버가 켜진 상태로 실행한다. 게임 실행에는 Playwright가 필요 없고, 테스트에만 사용한다. 다음은 프로젝트 의존성을 바꾸지 않고 임시 폴더에 테스트 도구를 준비하는 예시다.
+
+```powershell
+npm install --prefix "$env:TEMP\eclipse-browser-check" playwright
+$env:NODE_PATH = "$env:TEMP\eclipse-browser-check\node_modules"
+node "$env:NODE_PATH\playwright\cli.js" install chromium
+node tools/check-character.cjs
+```
+
+이미 설치한 Chromium을 쓰려면 `CHROMIUM_PATH` 환경 변수로 실행 파일을 지정한다. 테스트는 얼굴 모프, 눈 감김, 직전 모델 전환, 별도 캐릭터의 뼈대·표정 독립성, 게임 상태별 Idle/Run/Slash, 평지 발 궤적과 브라우저 예외를 검사한다. 스크린샷은 임시 폴더에 저장하며 최종 로그에 경로를 출력한다. 발 검사 최저치는 최근 약 -0.001m였으며, 이것은 클립의 기하 검사이지 실제 이동 중 발 미끄러짐이 없다는 보증은 아니다.
+
+이번 통합 검증: JavaScript 문법 검사, 시드 1/2 봇 시뮬레이션(9.6분/12.8분), Chromium 회귀 검사. 모바일 실기기 성능, 원격 Render 배포 성공, 스킬 시트 칸별 미술 검수는 별도로 확인해야 한다.
+
 ### 커밋
 
 main 에 직접 커밋·푸시한다. 푸시는 `git -c push.negotiate=true push origin main`.
@@ -256,7 +308,9 @@ main 에 직접 커밋·푸시한다. 푸시는 `git -c push.negotiate=true push
 ## 7. 알려진 한계와 다음 후보 작업
 
 - 싱글 플레이(봇 5명)만 있다. 실시간 멀티플레이는 서버가 필요하므로 Render Static Site 로는 불가능하고 Web Service 추가가 필요하다.
-- 캐릭터는 상자·원뿔을 조합한 로우폴리다. 실제 3D 모델(GLB)로 바꾸려면 Higgsfield 크레딧 충전이 필요하다(3장). 바꿀 때는 `models.js` 의 `buildHero` 가 반환하는 `{ root, update, height }` 형태만 맞추면 렌더러는 그대로 쓸 수 있다.
+- 카이만 최신 스킨 GLB다. 무료 Blender/Python 제작에는 Higgsfield 크레딧이 필요 없다. 다른 영웅을 교체할 때도 `buildHero`의 `{ root, update, height }` 인터페이스를 유지한다.
+- 립싱크·개별 손가락 애니메이션·물리 천 시뮬레이션은 없다. 코트와 스카프는 뼈대 동작이다. 달리기는 평지용이며 월드 좌표 발 고정이나 경사면 IK는 없으므로 실제 이동 속도에 따라 미끄러짐이 남을 수 있다.
+- 현재 스크립트 기반 메시의 얼굴·피부·머리 표현은 상업용 고급 캐릭터와 차이가 있다. 전문적인 조형/텍스처/리토폴로지나 적절한 베이스 모델을 쓰는 것이 더 적합할 수 있다. 확인 없이 “초상화 수준 완성”이라고 보고하지 않는다.
 - 시뮬레이션은 평면이다. 점프·고저차·낙하는 없다.
 - 카메라는 벽에 가리면 당겨지지만, 다른 유닛에 가리는 경우는 가까운 영웅을 숨기는 정도만 처리했다.
 - 효과음·배경음이 없다.
