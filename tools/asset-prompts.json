@@ -1,16 +1,1 @@
-[
- {
-  "id": "ground",
-  "keys": [
-   "ground"
-  ],
-  "params": {
-   "model": "gpt_image_2_6",
-   "quality": "medium",
-   "resolution": "1k",
-   "aspect_ratio": "1:1",
-   "output_format": "webp"
-  },
-  "prompt": "Seamless tileable top-down game ground texture: dark futuristic city plaza floor made of large worn metal-and-concrete panels with subtle seams, faint scratches, tiny dim teal circuit lines, a few small cracks. Flat even lighting, low contrast, dark navy-gray tone, no objects, no perspective, no shadows, no text. Edges must tile seamlessly."
- }
-]
+[]
