@@ -1,38 +1,5 @@
 [
  {
-  "id": "icons",
-  "keys": [
-   "icon_kai_0",
-   "icon_kai_1",
-   "icon_kai_2",
-   "icon_kai_3",
-   "icon_lyra_0",
-   "icon_lyra_1",
-   "icon_lyra_2",
-   "icon_lyra_3",
-   "icon_brom_0",
-   "icon_brom_1",
-   "icon_brom_2",
-   "icon_brom_3",
-   "icon_sera_0",
-   "icon_sera_1",
-   "icon_sera_2",
-   "icon_sera_3"
-  ],
-  "grid": [
-   4,
-   4
-  ],
-  "params": {
-   "model": "gpt_image_2_6",
-   "quality": "medium",
-   "resolution": "2k",
-   "aspect_ratio": "1:1",
-   "output_format": "webp"
-  },
-  "prompt": "A sheet of 16 square game ability icons laid out as an exact 4x4 grid of equal cells. Each icon fills its cell edge to edge on a dark background, with no gaps, no borders, no frames and no text. Stylized glossy cel-shaded MOBA ability icon style. Row 1, cyan energy sword theme: a diagonal cyan sword slash arc; a cyan dashing streak with a blade tip and speed lines; a circular cyan whirlwind of spinning blades; a brilliant straight cyan flash cut splitting the frame. Row 2, orange gunfire theme: a single glowing orange bullet with muzzle flash; a long orange piercing beam passing through a target ring; an orange flash grenade bursting with a shockwave; a storm of many orange bullets spraying in a fan. Row 3, golden heavy armor theme: a golden war hammer swinging; a tower shield charging forward with impact lines; a glowing golden protective dome around an armored silhouette; the ground shattering in a circular golden shockwave. Row 4, violet arcane theme: a glowing violet magic orb with a trail; an icy blue-violet frost nova burst of crystals; a violet teleport blink with two fading silhouettes and sparkles; a huge blazing violet meteor falling onto a target circle."
- },
- {
   "id": "portraits",
   "keys": [
    "portrait_kai",
