@@ -9,6 +9,8 @@ const sheet = (file, cols, rows, keys) => Object.fromEntries(keys.map((k, i) => 
 
 export const ASSETS = {
   portrait_sera: CDN + 'hf_20261116_113820_08ba2ba2-a81c-488f-a216-cdc71e1b1c0e.png',
+  // 영웅 탑다운 그림 (2D 시절 생성분). 초상화가 없는 영웅의 HUD·선택 화면 대체 이미지로 쓴다
+  ...sheet('hf_20261116_125123_69977583-1aa2-4d59-ad44-e4c35543fa7a.webp', 2, 2, ['sprite_kai', 'sprite_lyra', 'sprite_brom', 'sprite_sera']),
 };
 
 // CSS 배경으로 쓸 때의 스타일 (시트의 한 칸만 보이게)

@@ -39,7 +39,8 @@ function buildSelect() {
 // 초상화를 캔버스에 cover 방식으로 그린다 (시트의 한 칸도 비율을 유지한 채 잘라 그릴 수 있다)
 function paintArt() {
   for (const cv of document.querySelectorAll('canvas[data-art]')) {
-    const a = state.assets[cv.dataset.art], w = cv.clientWidth, h = cv.clientHeight, d = Math.min(devicePixelRatio || 1, 2);
+    // 초상화가 없으면 같은 영웅의 다른 그림(sprite_<id>)으로 대체한다
+    const a = state.assets[cv.dataset.art] || state.assets[cv.dataset.art.replace('portrait_', 'sprite_')], w = cv.clientWidth, h = cv.clientHeight, d = Math.min(devicePixelRatio || 1, 2);
     if (!w || !h) continue;
     cv.width = w * d; cv.height = h * d;
     if (!a) continue;
