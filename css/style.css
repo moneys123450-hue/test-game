@@ -121,7 +121,9 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
 .tb.main { width: 104px; height: 104px; right: 0; bottom: 0; font-size: 18px; border-color: var(--c, #fff); }
 .tb.b1 { right: 118px; bottom: 4px; } .tb.b2 { right: 104px; bottom: 84px; } .tb.b3 { right: 30px; bottom: 124px; } .tb.b4 { right: 176px; bottom: 96px; width: 56px; height: 56px; font-size: 12px; }
 .tb.ult { border-color: var(--gold); }
-.tb.down { background: rgba(255, 255, 255, 0.3); }
+.tb.down { background-color: rgba(255, 255, 255, 0.3); filter: brightness(1.35); }
+.tb.icon { background-repeat: no-repeat; border-color: var(--c, #fff); }
+.tb.icon.ult { border-color: var(--gold); }
 .tb.wait { opacity: 0.45; }
 .tb-mini { position: absolute; pointer-events: auto; top: 10px; width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: #fff; font-size: 18px; }
 #tb-pause { left: 10px; } #tb-score { left: 58px; }

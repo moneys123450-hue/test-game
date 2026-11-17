@@ -107,7 +107,12 @@ function buildHud() {
   for (const el of document.querySelectorAll('.tb')) {
     const sk = def.skills[el.dataset.slot];
     el.style.setProperty('--c', def.color);
-    if (!['lmb', 'space'].includes(el.dataset.slot)) el.textContent = sk.name.length > 4 ? sk.name.replace(' ', '\n') : sk.name;
+    const iconKey = `icon_${def.id}_${sk.icon}`, bg = sk.icon !== undefined && state.assets[iconKey] ? cssBg(iconKey) : null;
+    el.style.backgroundImage = ''; el.style.backgroundSize = ''; el.style.backgroundPosition = '';
+    el.classList.toggle('icon', !!bg);
+    if (bg) { Object.assign(el.style, bg); el.textContent = ''; } // 아이콘이 있으면 PC 스킬 칸과 같은 그림을 쓴다
+    else if (el.dataset.slot === 'lmb') el.textContent = '공격';
+    else if (el.dataset.slot !== 'space') el.textContent = sk.name.length > 4 ? sk.name.replace(' ', '\n') : sk.name;
   }
   for (const t of [0, 1]) $('tw' + t).innerHTML = '<i></i>'.repeat(4);
 }
