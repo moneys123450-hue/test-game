@@ -93,6 +93,8 @@ Space 는 전 영웅 공통 회피(무적 구르기)다.
 
 ### Blender 카이 현재 상태
 
+세라 AI 생성 시도(2026-11-17): `art/sera-ai/sera-reference-front.png`는 내장 imagegen으로 만든 전신 기준 **2D 이미지**다. `tools/generate-sera-ai.py`로 Microsoft 공식 TRELLIS.2 데모의 이미지 전처리는 성공했으나, 실제 3D 생성은 ZeroGPU 할당량 오류로 거절돼 **GLB/리깅/게임 적용은 아직 없다**. 원본 프롬프트와 실행 상태·재개 절차는 `art/sera-ai/README.md`에 기록했다. GTX 1060 3GB라 고해상도 모델 로컬 설치는 하지 않았고 유료 생성도 실행하지 않았다. fal은 발견했으나 연결 미확인이다. 계정 인증/무료 이용량 확인 후 이어간다. 기존 카이 모델은 유지한다.
+
 **이번 제작은 이미지→3D 생성 API가 아니라, Codex가 Blender Python으로 메시·재질·뼈대·동작을 작성하고 Blender에서 실행한 방식이다. Blender MCP는 설치하지 않았고, 유료 생성 API·외부 캐릭터 에셋도 사용하지 않았다.** PNG는 결과 확인용 렌더이며 실제 게임은 GLB를 불러온다.
 
 - 현재 모델: `art/kai-blender/kai-anime.glb` (약 2MB), 편집 원본: `kai-anime.blend`. 19개 뼈대, 스킨 가중치, `Idle`/`Run`/`Slash` 클립, `Blink`/`LookLeft`/`LookRight` 모프.
