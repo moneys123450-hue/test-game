@@ -78,12 +78,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink)
 #me-info { display: flex; flex-direction: column; gap: 5px; min-width: 370px; }
 #me-info .row { display: flex; gap: 10px; align-items: baseline; font-size: 13px; color: #aab6cc; }
 #me-info .row b { font-size: 17px; color: #fff; font-style: italic; } #me-kda { margin-left: auto; }
+#me-gold { color: var(--gold); font-weight: 700; }
+.row2 { display: flex; gap: 14px; align-items: flex-start; margin-top: 3px; }
 .bar { position: relative; height: 18px; background: #0a0f1a; border: 1px solid var(--line); overflow: hidden; }
 .bar i { position: absolute; inset: 0 auto 0 0; display: block; }
 .bar.hp i { background: linear-gradient(180deg, #73ffa0, #1fba5c); }
 .bar.hp em { position: absolute; inset: 0; text-align: center; font-size: 12px; font-style: normal; font-weight: 700; line-height: 16px; text-shadow: 0 1px 2px #000; }
 .bar.xp { height: 5px; } .bar.xp i { background: var(--gold); }
-#skills { display: flex; gap: 8px; margin-top: 3px; }
+#skills { display: flex; gap: 8px; }
 .slot { position: relative; width: 62px; height: 62px; border: 2px solid var(--line); background-color: #131b2b; background-repeat: no-repeat; background-position: center; background-size: cover; overflow: hidden; }
 .slot.ult { border-color: var(--gold); }
 .slot .glyph { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; font-weight: 900; color: var(--c); }
@@ -137,3 +139,37 @@ body.touch .keys { display: none; }
   .sub { margin: 10px 0 18px; font-size: 14px; }
 }
 @media (orientation: portrait) { body.touch::after { content: "화면을 가로로 돌려 주세요"; position: fixed; z-index: 50; top: 0; left: 0; right: 0; padding: 10px; text-align: center; background: var(--gold); color: #1a1205; font-weight: 700; font-size: 14px; pointer-events: none; } }
+
+/* 인벤토리 · 상점 · 귀환 */
+#inv { display: grid; grid-template-columns: repeat(4, 29px); gap: 4px; }
+.islot { position: relative; width: 29px; height: 29px; border: 1px solid var(--line); background-color: #0d1320; background-repeat: no-repeat; background-size: cover; display: grid; place-items: center; font-size: 16px; }
+.islot.pot { border-color: #5dfc8a; }
+.islot em { position: absolute; right: 1px; bottom: -1px; font-size: 10px; font-style: normal; font-weight: 700; text-shadow: 0 1px 2px #000; }
+.islot kbd { position: absolute; left: 0; top: 0; font: 700 8px inherit; background: rgba(0, 0, 0, 0.75); padding: 0 2px; }
+#recall-bar { position: absolute; left: 50%; top: 64%; transform: translateX(-50%); width: 260px; height: 26px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+#recall-bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #3fb6ff, #9be0ff); opacity: 0.7; }
+#recall-bar span { position: absolute; inset: 0; z-index: 1; text-align: center; font-size: 13px; font-weight: 700; line-height: 24px; text-shadow: 0 1px 2px #000; }
+#shop-hint { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--gold); color: var(--gold); padding: 5px 16px; font-size: 13px; }
+#shop-hint b { background: var(--gold); color: #1a1205; padding: 0 6px; margin-right: 4px; }
+#shop { position: absolute; inset: 0; display: grid; place-items: center; }
+.shop-box { pointer-events: auto; width: min(760px, 94vw); max-height: 86vh; overflow-y: auto; background: rgba(9, 13, 23, 0.96); border: 1px solid var(--line); padding: 16px 18px; }
+.shop-box header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.shop-box h2 { font-size: 22px; font-style: italic; }
+#shop-gold { color: var(--gold); font-weight: 700; font-size: 18px; }
+#shop-note { color: var(--red); font-size: 13px; flex: 1; }
+#shop-items { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sitem { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; text-align: left; padding: 8px 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: #e9eef7; font: inherit; cursor: pointer; }
+.sitem:hover { background: rgba(255, 255, 255, 0.12); }
+.sitem.no { opacity: 0.45; cursor: default; }
+.sitem .ic { width: 44px; height: 44px; display: grid; place-items: center; font-size: 26px; background-color: #131b2b; background-repeat: no-repeat; background-size: cover; border: 1px solid var(--line); }
+.sitem b { display: block; font-size: 14px; } .sitem span { display: block; font-size: 11px; color: #93a1b8; line-height: 1.35; }
+.sitem .cost { color: var(--gold); font-weight: 700; font-size: 15px; text-align: right; } .sitem .cost small { display: block; color: var(--red); font-size: 10px; font-weight: 500; }
+.shop-box footer { margin-top: 14px; } .shop-box h3 { font-size: 13px; margin-bottom: 6px; } .shop-box h3 small { color: #93a1b8; font-weight: 400; margin-left: 6px; }
+#shop-inv { display: flex; gap: 6px; flex-wrap: wrap; min-height: 46px; }
+#shop-inv .sitem { grid-template-columns: 30px auto; padding: 5px 9px; } #shop-inv .ic { width: 30px; height: 30px; font-size: 17px; }
+.tb-mini.wide { width: auto; padding: 0 10px; font-size: 13px; font-weight: 700; }
+#tb-shop { left: 106px; } #tb-recall { left: 154px; } #tb-potion { left: 214px; }
+body.touch #inv { display: none; }
+body.touch #shop-hint { display: none; }
+body.touch #minimap { top: 58px; }
+@media (max-height: 520px) { .shop-box { padding: 10px 12px; max-height: 96vh; } #shop-items { grid-template-columns: repeat(3, 1fr); gap: 5px; } .sitem span { display: none; } .sitem { grid-template-columns: 30px 1fr auto; padding: 5px 7px; } .sitem .ic { width: 30px; height: 30px; font-size: 18px; } #recall-bar { top: 70%; } }

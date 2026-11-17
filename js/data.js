@@ -60,17 +60,28 @@ export const RULES = {
   waveInterval: 24,
   firstWave: 4,
   minionsPerWave: 3,
-  structMul: 0.6, // 영웅이 건물에 주는 피해 배율
+  structMul: 0.5, // 영웅이 건물에 주는 피해 배율
   backdoorMul: 0.25, // 아군 미니언 없이 건물을 칠 때의 피해 배율
   backdoorRadius: 760,
   fountainHeal: 0.16, // 초당 최대 체력 비율
+  // 골드
+  goldStart: 420, // 신발 + 포션 2개를 바로 살 수 있는 금액
+  goldPassive: 1.6, // 초당
+  goldMinion: 24, // 영웅이 직접 처치
+  goldMinionNear: 9, // 영웅이 아닌 유닛이 처치했을 때 근처 적 영웅 각각
+  goldHeroKill: 150,
+  goldAssist: 60,
+  goldTower: 120, // 팀 전원
+  sellRate: 0.6,
+  invSlots: 6,
+  recallTime: 4, // 귀환 시전 시간(초). 이동·공격·피격 시 취소
   outOfCombatRegen: 0.012,
 };
 
 export const STRUCT = {
-  tower: { r: 62, hp: 4200, atk: 150, range: 640, cd: 1.05 },
-  tower2: { r: 62, hp: 5200, atk: 175, range: 640, cd: 1.0 },
-  core: { r: 110, hp: 8000, atk: 150, range: 600, cd: 0.9 },
+  tower: { r: 62, hp: 5400, atk: 150, range: 640, cd: 1.05 },
+  tower2: { r: 62, hp: 6800, atk: 175, range: 640, cd: 1.0 },
+  core: { r: 110, hp: 10500, atk: 150, range: 600, cd: 0.9 },
 };
 
 export const MINION = { r: 20, hp: 340, atk: 24, speed: 185, range: 78, aggro: 420, cd: 1.0, hpPerMin: 40, atkPerMin: 3 };
@@ -87,6 +98,7 @@ export const HEROES = {
     id: 'kai', name: '카이', title: '섬광의 검사', role: '근접 돌격', color: '#35e0ff',
     hp: 1550, atk: 96, speed: 335, r: 27, hpLv: 135, atkLv: 9, aiRange: 110, sprite: 150,
     look: { scale: 1.0, skin: '#e8b89a', hair: { color: '#1b1f2a', style: 'spiky', streak: '#35e0ff' }, torso: '#2f3a52', legs: '#222a3a', accent: '#35e0ff', weapon: 'katana', anim: 'slash' },
+    build: ['boots1', 'sword', 'fang', 'greatsword', 'boots2', 'heart'], // 봇이 사는 순서
     blurb: '빠른 연속 베기와 돌진으로 적진을 파고드는 근접 딜러.',
     skills: {
       lmb: { id: 'kai_lmb', name: '연참', cd: 0.42, lock: 0.16, icon: 0,
@@ -113,6 +125,7 @@ export const HEROES = {
     id: 'lyra', name: '리라', title: '쌍권총의 추적자', role: '원거리 딜러', color: '#ff9a3c',
     hp: 1180, atk: 82, speed: 322, r: 25, hpLv: 100, atkLv: 8.5, aiRange: 560, sprite: 150,
     look: { scale: 0.96, skin: '#f0c4a8', hair: { color: '#ff8a2a', style: 'ponytail' }, torso: '#e9edf2', legs: '#2a2f3a', accent: '#ff9a3c', weapon: 'pistols', anim: 'shoot' },
+    build: ['boots1', 'sword', 'greatsword', 'fang', 'boots2', 'hourglass'], // 봇이 사는 순서
     blurb: '먼 거리에서 꾸준히 쏘고, 탄막으로 전투를 마무리하는 사수.',
     skills: {
       lmb: { id: 'lyra_lmb', name: '속사', cd: 0.36, lock: 0.08, move: true, icon: 0,
@@ -139,6 +152,7 @@ export const HEROES = {
     id: 'brom', name: '브롬', title: '강철의 수호자', role: '탱커', color: '#ffd24a',
     hp: 2350, atk: 86, speed: 292, r: 33, hpLv: 190, atkLv: 7.5, aiRange: 120, sprite: 180,
     look: { scale: 1.28, bulk: 1.45, skin: '#c99878', hair: { color: '#5a3a22', style: 'beard' }, torso: '#8a6a3a', legs: '#4a4f5a', accent: '#ffd24a', pauldrons: '#b08a4a', weapon: 'hammer_shield', anim: 'smash' },
+    build: ['boots1', 'armor', 'shield', 'heart', 'hourglass', 'boots2'], // 봇이 사는 순서
     blurb: '두꺼운 방어와 군중 제어로 아군의 진입로를 여는 선봉.',
     skills: {
       lmb: { id: 'brom_lmb', name: '망치 강타', cd: 0.66, lock: 0.28, icon: 0,
@@ -164,6 +178,7 @@ export const HEROES = {
     id: 'sera', name: '세라', title: '별빛의 마도사', role: '마법사', color: '#b98cff',
     hp: 1080, atk: 92, speed: 316, r: 25, hpLv: 92, atkLv: 9.5, aiRange: 540, sprite: 150,
     look: { scale: 0.98, skin: '#f2d2c4', hair: { color: '#cfc4f2', style: 'long' }, torso: '#4a2f80', robe: '#3a2468', accent: '#b98cff', weapon: 'staff', anim: 'cast', hover: true },
+    build: ['boots1', 'hourglass', 'sword', 'greatsword', 'boots2', 'armor'], // 봇이 사는 순서
     blurb: '광역 마법과 점멸로 전장을 지배하지만 몸이 약한 마법사.',
     skills: {
       lmb: { id: 'sera_lmb', name: '별빛 탄', cd: 0.5, lock: 0.1, move: true, icon: 0,
@@ -186,6 +201,25 @@ export const HEROES = {
     },
   },
 };
+
+// 아이템 — 전부 데이터. stats 의 키는 world.recalc 가 합산한다.
+//   atk 공격력 / hp 최대 체력 / speed 이동 속도 / cdr 재사용 대기시간 감소(합산 상한 40%)
+//   lifesteal 흡혈 비율 / armor 받는 피해 감소 비율(합산 상한 50%) / regen 초당 체력 회복
+// group 이 같은 아이템은 하나만 가질 수 있고, 상위 아이템을 사면 차액만 내고 교체된다.
+// consumable 은 사용 아이템(스택). glyph 는 아이콘 이미지가 없을 때 쓰는 대체 문자.
+export const ITEMS = {
+  potion: { id: 'potion', name: '체력 포션', cost: 60, glyph: '🧪', desc: '6초에 걸쳐 체력 360 회복. 최대 5개.', consumable: { heal: 360, dur: 6 }, stack: 5 },
+  boots1: { id: 'boots1', name: '신속의 신발', cost: 300, glyph: '👟', desc: '이동 속도 +45', stats: { speed: 45 }, group: 'boots' },
+  boots2: { id: 'boots2', name: '질풍의 신발', cost: 700, glyph: '🥾', desc: '이동 속도 +80 (신속의 신발에서 차액으로 교체)', stats: { speed: 80 }, group: 'boots' },
+  sword: { id: 'sword', name: '강철 검', cost: 350, glyph: '🗡️', desc: '공격력 +18', stats: { atk: 18 } },
+  greatsword: { id: 'greatsword', name: '파멸의 대검', cost: 850, glyph: '⚔️', desc: '공격력 +45', stats: { atk: 45 } },
+  fang: { id: 'fang', name: '흡혈의 송곳니', cost: 700, glyph: '🩸', desc: '공격력 +15, 준 피해의 12% 만큼 회복', stats: { atk: 15, lifesteal: 0.12 } },
+  armor: { id: 'armor', name: '생명의 갑주', cost: 400, glyph: '🦺', desc: '최대 체력 +350', stats: { hp: 350 } },
+  heart: { id: 'heart', name: '거인의 심장', cost: 900, glyph: '❤️', desc: '최대 체력 +800, 초당 체력 8 회복', stats: { hp: 800, regen: 8 } },
+  shield: { id: 'shield', name: '수호자의 방패', cost: 750, glyph: '🛡️', desc: '최대 체력 +200, 받는 피해 12% 감소', stats: { hp: 200, armor: 0.12 } },
+  hourglass: { id: 'hourglass', name: '시간의 모래시계', cost: 600, glyph: '⏳', desc: '스킬 재사용 대기시간 15% 감소', stats: { cdr: 0.15 } },
+};
+export const ITEM_ORDER = ['potion', 'boots1', 'boots2', 'sword', 'greatsword', 'fang', 'armor', 'heart', 'shield', 'hourglass'];
 
 export const HERO_ORDER = ['kai', 'lyra', 'brom', 'sera'];
 export const SLOT_ORDER = ['lmb', 'rmb', 'q', 'e', 'space'];

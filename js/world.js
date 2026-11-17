@@ -1,6 +1,6 @@
 // 시뮬레이션 코어 — DOM에 의존하지 않는다 (node 에서 헤드리스 검증 가능).
 // 모든 영웅(플레이어/봇)은 동일한 intent 인터페이스로 조종된다.
-import { MAP, RULES, STRUCT, MINION, HEROES, SLOT_ORDER } from './data.js';
+import { MAP, RULES, STRUCT, MINION, HEROES, ITEMS, SLOT_ORDER } from './data.js';
 
 const TAU = Math.PI * 2;
 export const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -64,7 +64,8 @@ export class World {
       def, name: r.name || def.name, isPlayer: !!r.isPlayer, lane: r.lane || 'top', spawn: { x: sx, y: sy },
       level: 1, xp: 0, speed: def.speed, cds: {}, lockT: 0, lockMove: false, dash: null, respawnT: 0, lifeId: 1,
       k: 0, d: 0, a: 0, damagers: new Map(), aggroT: -99, lastCombatT: -99, castT: -99, castSlot: null, deathT: -99,
-      intent: { mx: 0, my: 0, aimX: sx + (r.team === 0 ? 100 : -100), aimY: sy, cast: {} },
+      gold: RULES.goldStart, items: [], potions: 0, recall: null, cdr: 0, lifesteal: 0, dmgMul: 1, regen: 0,
+      intent: { mx: 0, my: 0, aimX: sx + (r.team === 0 ? 100 : -100), aimY: sy, cast: {}, recall: false, potion: false },
       ai: r.isPlayer ? null : { thinkT: this.rand() * 0.3, mode: 'advance', target: null, retreat: false, strafe: 1, strafeT: 0, stuckT: 0, lastX: sx, lastY: sy, sideT: 0 },
     });
     for (const s of SLOT_ORDER) h.cds[s] = 0;
@@ -79,6 +80,67 @@ export class World {
     const m = Object.assign(this.base('minion', team, path[0][0] + (team === 0 ? 120 : -120), path[0][1] + offset, MINION.r,
       MINION.hp + MINION.hpPerMin * min, MINION.atk + MINION.atkPerMin * min), { path, wp: 1, speed: MINION.speed, target: null, scanT: 0, lane });
     this.units.push(m);
+  }
+
+  // ───────── 능력치 / 상점 ─────────
+  // 레벨과 아이템에서 능력치를 다시 계산한다 (능력치를 바꾸는 유일한 경로)
+  recalc(h) {
+    const b = { atk: 0, hp: 0, speed: 0, cdr: 0, lifesteal: 0, armor: 0, regen: 0 };
+    for (const id of h.items) for (const k in ITEMS[id].stats) b[k] += ITEMS[id].stats[k];
+    const lv = h.level - 1, oldMax = h.maxHp;
+    h.maxHp = h.def.hp + lv * h.def.hpLv + b.hp;
+    h.atk = h.def.atk + lv * h.def.atkLv + b.atk;
+    h.speed = h.def.speed + b.speed;
+    h.cdr = Math.min(0.4, b.cdr); h.lifesteal = b.lifesteal; h.dmgMul = 1 - Math.min(0.5, b.armor); h.regen = b.regen;
+    if (h.alive && h.maxHp > oldMax) h.hp += h.maxHp - oldMax;
+    h.hp = Math.min(h.hp, h.maxHp);
+  }
+
+  // 본진(회복 구역) 안이거나 부활 대기 중일 때만 상점을 쓸 수 있다
+  canShop(h) {
+    const core = MAP.cores[h.team];
+    return !h.alive || Math.hypot(h.x - core.x, h.y - core.y) < MAP.fountainRadius;
+  }
+
+  slotsUsed(h) { return h.items.length; } // 포션은 전용 칸을 쓰므로 장비 칸을 차지하지 않는다
+
+  // 구매 가능 여부와 실제 지불액. reason: home | gold | slots | owned | full
+  quote(h, id) {
+    const it = ITEMS[id];
+    let cost = it.cost, replace = -1;
+    if (it.group) {
+      replace = h.items.findIndex((x) => ITEMS[x].group === it.group);
+      if (replace >= 0) { if (ITEMS[h.items[replace]].cost >= it.cost) return { ok: false, reason: 'owned', cost }; cost -= ITEMS[h.items[replace]].cost; }
+    }
+    let reason = null;
+    if (!this.canShop(h)) reason = 'home';
+    else if (it.consumable && h.potions >= it.stack) reason = 'full';
+    else if (h.gold < cost) reason = 'gold';
+    else if (replace < 0 && !it.consumable && this.slotsUsed(h) >= RULES.invSlots) reason = 'slots';
+    return { ok: !reason, reason, cost, replace };
+  }
+
+  buy(h, id) {
+    const q = this.quote(h, id);
+    if (!q.ok) return q;
+    h.gold -= q.cost;
+    if (ITEMS[id].consumable) h.potions++;
+    else { if (q.replace >= 0) h.items[q.replace] = id; else h.items.push(id); this.recalc(h); }
+    return q;
+  }
+
+  sell(h, index) {
+    if (!this.canShop(h) || !h.items[index]) return false;
+    h.gold += Math.round(ITEMS[h.items[index]].cost * RULES.sellRate);
+    h.items.splice(index, 1); this.recalc(h);
+    return true;
+  }
+
+  usePotion(h) {
+    if (!h.alive || h.potions <= 0 || h.hp >= h.maxHp || h.buffs.some((b) => b.potion)) return false;
+    const c = ITEMS.potion.consumable;
+    h.potions--; h.buffs.push({ t: c.dur, mods: {}, hot: c.heal / c.dur, potion: true });
+    return true;
   }
 
   // ───────── 조회 ─────────
@@ -125,12 +187,15 @@ export class World {
       if (src && src.kind === 'hero') amount *= this.minionNear(src.team, tgt) ? RULES.structMul : RULES.backdoorMul;
     }
     for (const b of tgt.buffs) if (b.mods.dmgTaken) amount *= b.mods.dmgTaken;
+    if (tgt.dmgMul) amount *= tgt.dmgMul;
     amount = Math.max(1, Math.round(amount));
     tgt.hp -= amount;
     tgt.lastDamagedT = this.time;
     tgt.flashT = 0.12;
+    if (tgt.recall) tgt.recall = null; // 피격 시 귀환 취소
     if (src && src.kind === 'hero') {
       src.lastCombatT = this.time;
+      if (src.lifesteal && !tgt.struct && src.alive) src.hp = Math.min(src.maxHp, src.hp + amount * src.lifesteal);
       if (tgt.kind === 'hero') { tgt.damagers.set(src.id, this.time); src.aggroT = this.time; }
     }
     if (tgt.kind === 'hero' || (src && src.kind === 'hero')) {
@@ -159,8 +224,8 @@ export class World {
     while (h.level < RULES.maxLevel && h.xp >= RULES.xpNeed(h.level)) {
       h.xp -= RULES.xpNeed(h.level);
       h.level++;
-      h.maxHp += h.def.hpLv; h.atk += h.def.atkLv;
-      if (h.alive) h.hp = Math.min(h.maxHp, h.hp + h.def.hpLv + h.maxHp * 0.15);
+      this.recalc(h);
+      if (h.alive) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * 0.15);
       this.addFx({ type: 'levelup', follow: h.id, x: h.x, y: h.y, dur: 0.9 });
       if (h.isPlayer) this.events.push({ type: 'levelup', level: h.level });
     }
@@ -173,22 +238,24 @@ export class World {
     if (tgt.kind === 'minion') {
       const near = this.heroes.filter((h) => h.alive && h.team === enemyTeam && dist(h, tgt) < RULES.xpShareRadius);
       for (const h of near) this.giveXp(h, RULES.xpMinion / Math.sqrt(near.length));
+      if (src && src.kind === 'hero') { src.gold += RULES.goldMinion; this.addFx({ type: 'num', x: tgt.x, y: tgt.y, text: `+${RULES.goldMinion}`, color: '#ffd76a', dur: 0.9, srcId: src.id, gold: true }); }
+      else for (const h of near) h.gold += RULES.goldMinionNear;
     } else if (tgt.kind === 'hero') {
-      tgt.d++; tgt.lifeId++; tgt.deathT = this.time; tgt.dash = null; tgt.buffs = []; tgt.slows = []; tgt.stunT = 0; tgt.lockT = 0;
+      tgt.d++; tgt.lifeId++; tgt.deathT = this.time; tgt.recall = null; tgt.dash = null; tgt.buffs = []; tgt.slows = []; tgt.stunT = 0; tgt.lockT = 0;
       tgt.respawnT = RULES.respawn(tgt.level);
       this.kills[enemyTeam]++;
       const killer = src && src.kind === 'hero' ? src : null;
       const xp = RULES.xpHeroKill(tgt.level);
-      if (killer) { killer.k++; this.giveXp(killer, xp); }
+      if (killer) { killer.k++; killer.gold += RULES.goldHeroKill; this.giveXp(killer, xp); }
       for (const [id, t] of tgt.damagers) {
         if (this.time - t > 10 || (killer && id === killer.id)) continue;
         const h = this.heroes.find((x) => x.id === id);
-        if (h) { h.a++; this.giveXp(h, xp * 0.5); }
+        if (h) { h.a++; h.gold += RULES.goldAssist; this.giveXp(h, xp * 0.5); }
       }
       tgt.damagers.clear();
       this.events.push({ type: 'kill', killer: killer ? killer.name : (src ? (src.struct ? '타워' : '미니언') : '?'), killerTeam: enemyTeam, victim: tgt.name, victimTeam: tgt.team, playerInvolved: tgt.isPlayer || (killer && killer.isPlayer) });
     } else if (tgt.kind === 'tower') {
-      for (const h of this.heroes) if (h.team === enemyTeam) this.giveXp(h, RULES.xpTower);
+      for (const h of this.heroes) if (h.team === enemyTeam) { this.giveXp(h, RULES.xpTower); h.gold += RULES.goldTower; }
       this.events.push({ type: 'tower', team: tgt.team, lane: tgt.lane, tier: tgt.tier });
     } else if (tgt.kind === 'core') {
       this.over = enemyTeam;
@@ -201,7 +268,8 @@ export class World {
 
   cast(h, slot) {
     const sk = h.def.skills[slot];
-    h.cds[slot] = sk.cd; h.lockT = sk.lock; h.lockMove = !!sk.move;
+    h.cds[slot] = slot === 'lmb' ? sk.cd : sk.cd * (1 - h.cdr); h.lockT = sk.lock; h.lockMove = !!sk.move;
+    h.recall = null;
     h.castT = this.time; h.castSlot = slot; // 렌더러의 공격 동작용
     if (sk.ult) { this.addFx({ type: 'ultcast', follow: h.id, x: h.x, y: h.y, color: h.def.color, dur: 0.7 }); this.events.push({ type: 'ult', name: h.name, skill: sk.name, team: h.team }); }
     for (const eff of sk.effects) {
@@ -296,6 +364,8 @@ export class World {
       for (const team of [0, 1]) for (const lane of ['top', 'bot']) for (let i = 0; i < RULES.minionsPerWave; i++) this.addMinion(team, lane, (i - 1) * 55);
     }
 
+    for (const h of this.heroes) h.gold += RULES.goldPassive * dt;
+
     if (this.timers.length) {
       const due = this.timers.filter((t) => t.t <= this.time);
       if (due.length) { this.timers = this.timers.filter((t) => t.t > this.time); for (const t of due) t.run(); }
@@ -346,6 +416,9 @@ export class World {
     const core = MAP.cores[h.team];
     if (Math.hypot(h.x - core.x, h.y - core.y) < MAP.fountainRadius) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * RULES.fountainHeal * dt);
     else if (this.time - h.lastDamagedT > 6) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * RULES.outOfCombatRegen * dt);
+    let heal = h.regen;
+    for (const b of h.buffs) if (b.hot) heal += b.hot;
+    if (heal) h.hp = Math.min(h.maxHp, h.hp + heal * dt);
 
     if (h.dash) {
       const d = h.dash;
@@ -361,8 +434,19 @@ export class World {
       if (d.t <= 0) h.dash = null;
       return;
     }
-    if (h.stunT > 0) return;
+    if (h.stunT > 0) { h.recall = null; return; }
     const it = h.intent;
+    if (it.potion) this.usePotion(h);
+    // 귀환: 가만히 서서 시전. 이동·스킬·피격·기절로 취소된다
+    const moving = Math.hypot(it.mx, it.my) > 0.01;
+    if (h.recall) {
+      if (moving) h.recall = null;
+      else if ((h.recall.t -= dt) <= 0) {
+        this.addFx({ type: 'blink', x: h.x, y: h.y, color: h.def.color, dur: 0.5 });
+        h.x = h.spawn.x; h.y = h.spawn.y; h.recall = null;
+        this.addFx({ type: 'blink', x: h.x, y: h.y, color: h.def.color, dur: 0.5 });
+      }
+    } else if (it.recall && !moving && h.lockT <= 0 && !this.canShop(h)) h.recall = { t: RULES.recallTime };
     h.face = Math.atan2(it.aimY - h.y, it.aimX - h.x);
     for (const slot of CAST_PRIORITY) {
       if (it.cast[slot] && this.canCast(h, slot)) { this.cast(h, slot); break; }

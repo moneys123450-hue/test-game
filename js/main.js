@@ -1,5 +1,5 @@
 // 화면 전환, 입력(키보드·마우스 포인터 잠금·터치), HUD, 메인 루프
-import { HEROES, HERO_ORDER, SLOT_ORDER, SLOT_LABEL, TEAM_NAME, RULES, ASSETS, cssBg, loadAssets } from './data.js';
+import { HEROES, HERO_ORDER, ITEMS, ITEM_ORDER, SLOT_ORDER, SLOT_LABEL, TEAM_NAME, RULES, ASSETS, cssBg, loadAssets } from './data.js';
 import { World } from './world.js';
 import { updateBot } from './ai.js';
 import { Renderer3D } from './render3d.js';
@@ -7,10 +7,10 @@ import { drawMinimap } from './minimap.js';
 
 const $ = (id) => document.getElementById(id);
 const STEP = 1 / 60;
-const state = { assets: {}, hero: 'kai', difficulty: 1, world: null, player: null, renderer: null, paused: false, running: false, acc: 0, last: 0, endT: 0 };
+const state = { assets: {}, hero: 'kai', difficulty: 1, world: null, player: null, renderer: null, paused: false, running: false, shop: false, acc: 0, last: 0, endT: 0 };
 const keys = new Set();
 const mouse = { l: false, r: false };
-const touch = { on: false, joy: null, btn: {}, look: null, score: false };
+const touch = { on: false, joy: null, btn: {}, look: null, score: false, recall: 0, potion: 0 };
 const view = $('view');
 window.__game = state; // 디버깅·자동 검증용
 
@@ -55,7 +55,7 @@ const pick = (pool, n) => { const p = [...pool], out = []; while (out.length < n
 function enterDemo() {
   const a = pick(HERO_ORDER, 3), b = pick(HERO_ORDER, 3);
   const w = new World({ roster: [...a.map((hero, i) => ({ hero, team: 0, lane: i === 1 ? 'bot' : 'top' })), ...b.map((hero, i) => ({ hero, team: 1, lane: i === 1 ? 'top' : 'bot' }))] });
-  state.world = w; state.player = w.heroes[0]; state.running = false; state.paused = false;
+  state.world = w; state.player = w.heroes[0]; state.running = false; state.paused = false; closeShop(true);
   state.renderer.setWorld(w);
 }
 
@@ -70,7 +70,7 @@ function startGame() {
   state.player = state.world.heroes[0];
   state.renderer.setWorld(state.world);
   state.renderer.view.yaw = 0; state.renderer.view.pitch = 0.3;
-  state.paused = false; state.running = true; state.acc = 0; state.endT = 0;
+  state.paused = false; state.running = true; state.acc = 0; state.endT = 0; state.invKey = null; closeShop(true);
   mouse.l = mouse.r = false;
   buildHud();
   $('feed').innerHTML = '';
@@ -162,11 +162,13 @@ function updateHud() {
   }
   $('me-lv').textContent = `Lv.${p.level}`;
   $('me-kda').textContent = `${p.k} / ${p.d} / ${p.a}`;
+  $('me-gold').textContent = `🪙 ${Math.floor(p.gold)}`;
+  updateInventory(p);
   $('me-hp').style.width = `${(p.hp / p.maxHp) * 100}%`;
   $('me-hp-t').textContent = `${Math.ceil(p.hp)} / ${Math.round(p.maxHp)}`;
   $('me-xp').style.width = p.level >= RULES.maxLevel ? '100%' : `${(p.xp / RULES.xpNeed(p.level)) * 100}%`;
   for (const el of $('skills').children) {
-    const slot = el.dataset.slot, cd = p.cds[slot], max = p.def.skills[slot].cd;
+    const slot = el.dataset.slot, cd = p.cds[slot], max = p.def.skills[slot].cd * (slot === 'lmb' ? 1 : 1 - p.cdr);
     el.children[el.children.length - 3].style.height = cd > 0 ? `${Math.min(100, (cd / max) * 100)}%` : '0';
     el.children[el.children.length - 2].textContent = cd > 0.5 ? Math.ceil(cd) : '';
     el.classList.toggle('ready', cd <= 0);
@@ -176,10 +178,68 @@ function updateHud() {
   const showSb = keys.has('Tab') || touch.score;
   $('scoreboard').classList.toggle('hidden', !showSb);
   if (showSb) $('scoreboard').innerHTML = scoreTable(w, p);
-  $('crosshair').classList.toggle('hidden', !p.alive);
-  $('lock-hint').classList.toggle('hidden', touch.on || document.pointerLockElement === view);
+  $('crosshair').classList.toggle('hidden', !p.alive || state.shop);
+  $('lock-hint').classList.toggle('hidden', touch.on || state.shop || document.pointerLockElement === view);
+  $('recall-bar').classList.toggle('hidden', !p.recall);
+  if (p.recall) $('recall-fill').style.width = `${(1 - p.recall.t / RULES.recallTime) * 100}%`;
+  $('shop-hint').classList.toggle('hidden', state.shop || !w.canShop(p));
+  if (state.shop && (state.shopT = (state.shopT || 0) + 1) % 20 === 0) renderShop();
   drawMinimap($('minimap'), w, p, state.renderer.view.yaw);
 }
+
+// ───────── 인벤토리 · 상점 ─────────
+function itemIcon(id) {
+  const st = state.assets['item_' + id] ? cssBg('item_' + id) : null;
+  return st ? `<div class="ic" style="background-image:${st.backgroundImage};background-size:${st.backgroundSize || 'cover'};background-position:${st.backgroundPosition || 'center'}"></div>` : `<div class="ic">${ITEMS[id].glyph}</div>`;
+}
+
+function updateInventory(p) {
+  const key = p.items.join(',') + '|' + p.potions;
+  if (key === state.invKey) return;
+  state.invKey = key;
+  let html = `<div class="islot pot" title="체력 포션 (F)">${ITEMS.potion.glyph}<kbd>F</kbd><em>${p.potions}</em></div>`;
+  for (let i = 0; i < RULES.invSlots; i++) { const id = p.items[i]; html += `<div class="islot" title="${id ? ITEMS[id].name + ' — ' + ITEMS[id].desc : '빈 칸'}">${id ? ITEMS[id].glyph : ''}</div>`; }
+  $('inv').innerHTML = html;
+  $('tb-potion').textContent = `포션 ${p.potions}`;
+}
+
+const REASON = { home: '본진에서만 구매', gold: '골드 부족', slots: '칸 부족', owned: '보유 중', full: '최대 보유' };
+function renderShop() {
+  const w = state.world, p = state.player, home = w.canShop(p);
+  $('shop-gold').textContent = `🪙 ${Math.floor(p.gold)}`;
+  $('shop-note').textContent = home ? '' : '본진(코어 주변 원 안)에 있어야 사고팔 수 있습니다. B 로 귀환하세요.';
+  $('shop-items').innerHTML = ITEM_ORDER.map((id) => {
+    const it = ITEMS[id], q = w.quote(p, id);
+    return `<button class="sitem${q.ok ? '' : ' no'}" data-buy="${id}">${itemIcon(id)}<div><b>${it.name}</b><span>${it.desc}</span></div><div class="cost">${q.cost}${q.ok ? '' : `<small>${REASON[q.reason]}</small>`}</div></button>`;
+  }).join('');
+  $('shop-inv').innerHTML = (p.potions ? `<div class="sitem no">${itemIcon('potion')}<div><b>체력 포션 × ${p.potions}</b></div></div>` : '')
+    + p.items.map((id, i) => `<button class="sitem${home ? '' : ' no'}" data-sell="${i}">${itemIcon(id)}<div><b>${ITEMS[id].name}</b><span>판매 +${Math.round(ITEMS[id].cost * RULES.sellRate)}</span></div></button>`).join('')
+    || '<span style="color:#93a1b8;font-size:13px">아직 아이템이 없습니다</span>';
+}
+
+function openShop() {
+  if (!state.running || state.paused) return;
+  state.shop = true; state.shopT = 0;
+  mouse.l = mouse.r = false;
+  $('shop').classList.remove('hidden');
+  renderShop();
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+function closeShop(silent) {
+  state.shop = false;
+  $('shop').classList.add('hidden');
+  if (!silent && state.running && !state.paused) lockPointer();
+}
+// 다시 그려도 클릭이 끊기지 않도록 누르는 순간에 처리한다
+$('shop').addEventListener('pointerdown', (e) => {
+  const b = e.target.closest('[data-buy],[data-sell]');
+  if (!b || !state.running) return;
+  e.preventDefault();
+  const w = state.world, p = state.player;
+  if (b.dataset.buy) w.buy(p, b.dataset.buy); else w.sell(p, Number(b.dataset.sell));
+  renderShop();
+});
+$('shop-close').onclick = () => closeShop();
 
 function endGame() {
   const w = state.world, p = state.player, win = w.over === p.team;
@@ -225,6 +285,9 @@ function playerIntent(w, p) {
     it.cast = { lmb: mouse.l, rmb: mouse.r, q: keys.has('KeyQ'), e: keys.has('KeyE'), space: keys.has('Space') };
   }
   it.mx = b.fx * f + b.rx * s; it.my = b.fy * f + b.ry * s; // 카메라 기준 이동
+  const now = performance.now();
+  it.recall = keys.has('KeyB') || now < touch.recall;
+  it.potion = keys.has('KeyF') || keys.has('Digit1') || now < touch.potion;
 }
 
 // ───────── 루프 ─────────
@@ -265,12 +328,12 @@ function lockPointer() {
 function setPaused(v) {
   if (!state.running) return;
   state.paused = v; $('pause').classList.toggle('hidden', !v);
-  if (v) { keys.clear(); mouse.l = mouse.r = false; if (document.pointerLockElement) document.exitPointerLock(); } else lockPointer();
+  if (v) { closeShop(true); keys.clear(); mouse.l = mouse.r = false; if (document.pointerLockElement) document.exitPointerLock(); } else lockPointer();
 }
 addEventListener('keydown', (e) => {
   if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
-  if (e.code === 'Escape') { if (state.running && !state.paused) setPaused(true); return; } // 재개는 버튼으로 (포인터 잠금은 클릭이 필요하다)
-  if (e.code === 'KeyP') { if (state.running) setPaused(!state.paused); return; }
+  if (e.code === 'Escape') { if (state.shop) closeShop(); else if (state.running && !state.paused) setPaused(true); return; } // 재개는 버튼으로 (포인터 잠금은 클릭이 필요하다)
+  if (e.code === 'KeyP') { if (!e.repeat) { if (state.shop) closeShop(); else openShop(); } return; }
   keys.add(e.code);
 });
 addEventListener('keyup', (e) => keys.delete(e.code));
@@ -278,6 +341,7 @@ addEventListener('blur', () => { keys.clear(); mouse.l = mouse.r = false; });
 addEventListener('mousemove', (e) => { if (document.pointerLockElement === view && state.running && !state.paused) state.renderer.look(e.movementX, e.movementY); });
 view.addEventListener('mousedown', (e) => {
   if (!state.running || state.paused || touch.on) return;
+  if (state.shop) { closeShop(); return; }
   if (document.pointerLockElement !== view) { lockPointer(); return; } // 첫 클릭은 조준 고정에만 쓴다
   if (e.button === 0) mouse.l = true;
   if (e.button === 2) mouse.r = true;
@@ -285,7 +349,7 @@ view.addEventListener('mousedown', (e) => {
 addEventListener('mouseup', (e) => { if (e.button === 0) mouse.l = false; if (e.button === 2) mouse.r = false; });
 addEventListener('contextmenu', (e) => e.preventDefault());
 // Esc 로 포인터 잠금이 풀리면 일시정지로 처리한다
-document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement !== view && state.running && !state.paused && !touch.on && state.world.over === null) setPaused(true); });
+document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement !== view && state.running && !state.paused && !state.shop && !touch.on && state.world.over === null) setPaused(true); });
 addEventListener('resize', () => { if (state.renderer) state.renderer.resize(); paintArt(); });
 
 // ───────── 터치 ─────────
@@ -327,6 +391,9 @@ function setupTouch() {
   }
   $('tb-pause').addEventListener('touchstart', (e) => { e.preventDefault(); setPaused(!state.paused); }, opt);
   $('tb-score').addEventListener('touchstart', (e) => { e.preventDefault(); touch.score = !touch.score; }, opt);
+  $('tb-shop').addEventListener('touchstart', (e) => { e.preventDefault(); if (state.shop) closeShop(); else openShop(); }, opt);
+  $('tb-recall').addEventListener('touchstart', (e) => { e.preventDefault(); touch.recall = performance.now() + 250; }, opt);
+  $('tb-potion').addEventListener('touchstart', (e) => { e.preventDefault(); touch.potion = performance.now() + 250; }, opt);
   addEventListener('touchstart', enableTouch, { passive: true });
 }
 setupTouch();

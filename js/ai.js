@@ -52,6 +52,19 @@ function dangerTower(w, h, x, y, margin) {
   return null;
 }
 
+// 상점 이용: 영웅 데이터의 build 순서대로 산다. 포션은 1개 이상 유지한다.
+function shop(w, h) {
+  if (!w.canShop(h)) return;
+  const ai = h.ai, build = h.def.build || [];
+  ai.buildIdx = ai.buildIdx || 0;
+  for (let guard = 0; guard < 4 && ai.buildIdx < build.length; guard++) {
+    const q = w.buy(h, build[ai.buildIdx]);
+    if (q.ok || q.reason === 'owned') ai.buildIdx++;
+    else break;
+  }
+  if (h.potions < 2 && ai.buildIdx > 0) w.buy(h, 'potion');
+}
+
 function decide(w, h) {
   const ai = h.ai;
   const hpPct = h.hp / h.maxHp;
@@ -70,8 +83,12 @@ function decide(w, h) {
     else if (w.vulnerable(u) && d < 760 && d < sd) { sd = d; struct = u; }
   }
   ai.outnumbered = nearEnemies > nearAllies + 1 && hpPct < 0.7;
+  // 다음 아이템을 살 돈이 넉넉히 모였고 주변에 적 영웅이 없으면 본진에 다녀온다
+  const next = (h.def.build || [])[ai.buildIdx || 0];
+  if (w.canShop(h)) ai.shopTrip = false;
+  else if (next && !nearEnemies && h.gold >= w.quote(h, next).cost + 120 && h.gold >= 450) ai.shopTrip = true;
   ai.nearEnemyHero = hero;
-  if (ai.retreat || ai.outnumbered) { ai.mode = 'retreat'; ai.target = hero; return; }
+  if (ai.retreat || ai.outnumbered || ai.shopTrip) { ai.mode = 'retreat'; ai.target = hero; return; }
   if (hero) { ai.mode = 'fight'; ai.target = hero; return; }
   if (minion) { ai.mode = 'fight'; ai.target = minion; return; }
   if (struct && !dangerTower(w, h, h.x, h.y, 0)) { ai.mode = 'fight'; ai.target = struct; return; }
@@ -86,16 +103,17 @@ function moveTo(h, x, y) {
 
 export function updateBot(w, h, dt) {
   const ai = h.ai, it = h.intent, diff = DIFF[w.difficulty] || DIFF[1];
-  it.cast = {}; it.mx = 0; it.my = 0;
-  if (!h.alive) return;
+  it.cast = {}; it.mx = 0; it.my = 0; it.recall = false; it.potion = false;
+  if (!h.alive) { ai.thinkT -= dt; if (ai.thinkT <= 0) { ai.thinkT = 0.5; shop(w, h); } return; }
   ai.thinkT -= dt;
-  if (ai.thinkT <= 0) { ai.thinkT = diff.think * (0.8 + w.rand() * 0.4); decide(w, h); ai.roll = w.rand(); ai.errA = (w.rand() - 0.5) * 2; }
+  if (ai.thinkT <= 0) { ai.thinkT = diff.think * (0.8 + w.rand() * 0.4); decide(w, h); shop(w, h); ai.roll = w.rand(); ai.errA = (w.rand() - 0.5) * 2; }
   ai.strafeT -= dt;
   if (ai.strafeT <= 0) { ai.strafeT = 0.6 + w.rand() * 0.9; ai.strafe = w.rand() < 0.5 ? -1 : 1; }
 
   const path = lanePath(h.lane, h.team);
   const t = ai.target && ai.target.alive ? ai.target : null;
   const hpPct = h.hp / h.maxHp;
+  if (hpPct < 0.55 && h.potions > 0 && !w.canShop(h)) it.potion = true;
 
   if (ai.mode === 'retreat') {
     const core = MAP.cores[h.team];
@@ -105,6 +123,12 @@ export function updateBot(w, h, dt) {
     const threat = ai.nearEnemyHero && ai.nearEnemyHero.alive && dist(h, ai.nearEnemyHero) < 420;
     if (threat) for (const slot of ['q', 'rmb', 'space']) { const sk = h.def.skills[slot]; if (sk.ai && sk.ai.use === 'escape' && w.canCast(h, slot)) { it.cast[slot] = true; break; } }
     if (threat) { const sk = h.def.skills.q; if (sk.ai && sk.ai.use === 'defend') it.cast.q = true; }
+    // 주변이 안전하고 본진이 멀면 걸어가지 않고 귀환한다
+    if (!ai.nearEnemyHero && Math.hypot(core.x - h.x, core.y - h.y) > 1400 && w.time - h.lastDamagedT > 2.5 && !dangerTower(w, h, h.x, h.y, 150)) {
+      let safe = true;
+      for (const u of w.units) if (u.alive && u.team !== h.team && u.kind === 'minion' && dist(u, h) < 480) { safe = false; break; }
+      if (safe) { it.mx = 0; it.my = 0; it.recall = true; }
+    }
   } else if (ai.mode === 'fight' && t) {
     const d = dist(h, t) - t.r;
     const lead = t.struct ? 0 : Math.min(0.35, d / 1500);

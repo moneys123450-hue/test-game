@@ -109,6 +109,11 @@ export function buildHero(def, team) {
   const shield = new THREE.Mesh(new THREE.SphereGeometry(1.25, 14, 10), new THREE.MeshBasicMaterial({ color: '#ffd24a', transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending }));
   shield.position.y = 1.1; shield.visible = false; root.add(shield);
 
+  const recall = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 5, 18, 1, true), new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  recall.position.y = 2.5; recall.visible = false; root.add(recall);
+  const healFx = new THREE.Mesh(new THREE.SphereGeometry(1.05, 12, 8), new THREE.MeshBasicMaterial({ color: '#5dfc8a', transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }));
+  healFx.position.y = 1.1; healFx.visible = false; root.add(healFx);
+
   const st = { phase: 0, fall: 0 };
   const stance = STANCE[L.anim] || STANCE.slash;
 
@@ -121,7 +126,7 @@ export function buildHero(def, team) {
       st.fall = Math.min(1, st.fall + dt * 2.5);
       body.rotation.set(0, 0, st.fall * 1.5); body.position.y = 0;
       body.visible = time - h.deathT < 2.5;
-      flash.material.opacity = 0; shield.visible = false;
+      flash.material.opacity = 0; shield.visible = false; recall.visible = false; healFx.visible = false;
       return;
     }
     st.fall = 0; body.visible = true;
@@ -147,6 +152,9 @@ export function buildHero(def, team) {
     if (w.spin) w.spin.rotation.y += dt * 2;
     flash.material.opacity = h.flashT > 0 ? 0.35 : 0;
     shield.visible = h.buffs.some((b) => b.fx === 'shield');
+    healFx.visible = h.buffs.some((b) => b.potion);
+    recall.visible = !!h.recall;
+    if (h.recall) { const k = 1 - h.recall.t / 4; recall.material.opacity = 0.2 + k * 0.45; recall.scale.set(1.15 - k * 0.5, 1, 1.15 - k * 0.5); recall.rotation.y = time * 4; }
     body.traverse((o) => { if (o.material && o.material.transparent !== (h.invulnT > 0)) { o.material.transparent = h.invulnT > 0; o.material.opacity = h.invulnT > 0 ? 0.5 : 1; o.material.needsUpdate = true; } });
   }
   return { root, update, height: 2.15 * (L.scale || 1) };

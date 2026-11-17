@@ -30,7 +30,7 @@
       <button class="btn small" data-diff="2">어려움</button>
     </div>
     <div class="keys">
-      <b>WASD</b> 이동 · <b>마우스</b> 시점·조준 · <b>좌/우클릭</b> 공격·스킬 · <b>Q</b> 스킬 · <b>E</b> 궁극기 · <b>Space</b> 회피 · <b>Tab</b> 점수판 · <b>Esc</b> 일시정지
+      <b>WASD</b> 이동 · <b>마우스</b> 시점·조준 · <b>좌/우클릭</b> 공격·스킬 · <b>Q</b> 스킬 · <b>E</b> 궁극기 · <b>Space</b> 회피 · <b>F</b> 포션 · <b>B</b> 귀환 · <b>P</b> 상점(본진) · <b>Tab</b> 점수판 · <b>Esc</b> 일시정지
     </div>
     <button id="btn-play" class="btn primary">전투 시작</button>
   </div>
@@ -46,14 +46,16 @@
   <div id="lock-hint" class="hidden">화면을 클릭하면 시점 조작이 시작됩니다</div>
   <div id="feed"></div>
   <div id="announce"></div>
+  <div id="recall-bar" class="hidden"><span>귀환 중</span><i id="recall-fill"></i></div>
+  <div id="shop-hint" class="hidden"><b>P</b> 상점</div>
   <div id="respawn" class="hidden"><p>처치당했습니다</p><b id="respawn-t">5</b><span>초 후 부활</span></div>
   <div id="bottom">
     <div id="me-portrait"></div>
     <div id="me-info">
-      <div class="row"><b id="me-name"></b><span id="me-lv"></span><span id="me-kda"></span></div>
+      <div class="row"><b id="me-name"></b><span id="me-lv"></span><span id="me-gold"></span><span id="me-kda"></span></div>
       <div class="bar hp"><i id="me-hp"></i><em id="me-hp-t"></em></div>
       <div class="bar xp"><i id="me-xp"></i></div>
-      <div id="skills"></div>
+      <div class="row2"><div id="skills"></div><div id="inv"></div></div>
     </div>
   </div>
   <canvas id="minimap" width="286" height="165"></canvas>
@@ -69,6 +71,16 @@
     </div>
     <button id="tb-pause" class="tb-mini">Ⅱ</button>
     <button id="tb-score" class="tb-mini">☰</button>
+    <button id="tb-shop" class="tb-mini">🛒</button>
+    <button id="tb-recall" class="tb-mini wide">귀환</button>
+    <button id="tb-potion" class="tb-mini wide">포션 0</button>
+  </div>
+  <div id="shop" class="hidden">
+    <div class="shop-box">
+      <header><h2>상점</h2><span id="shop-gold"></span><span id="shop-note"></span><button id="shop-close" class="btn small">닫기 (P)</button></header>
+      <div id="shop-items"></div>
+      <footer><h3>보유 아이템 <small>누르면 판매 (구매가의 60%)</small></h3><div id="shop-inv"></div></footer>
+    </div>
   </div>
   <div id="scoreboard" class="hidden"></div>
   <div id="pause" class="hidden"><div><h2>일시정지</h2><button id="btn-resume" class="btn primary">계속하기</button><button id="btn-quit" class="btn">영웅 선택으로</button></div></div>

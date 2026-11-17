@@ -16,5 +16,5 @@ while (w.over === null && w.time < 45 * 60) {
   for (const u of w.units) if (!Number.isFinite(u.x) || !Number.isFinite(u.y) || !Number.isFinite(u.hp)) throw new Error('NaN in unit ' + u.kind);
 }
 console.log(`seed ${seed} diff ${diff}: winner=${w.over} time=${(w.time / 60).toFixed(1)}m kills=${w.kills} maxUnits=${maxUnits}`);
-console.log(w.heroes.map((h) => `${h.team ? 'R' : 'B'}:${h.def.id} L${h.level} ${h.k}/${h.d}/${h.a}`).join(' | '));
+console.log(w.heroes.map((h) => `${h.team ? 'R' : 'B'}:${h.def.id} L${h.level} ${h.k}/${h.d}/${h.a} [${h.items.join(',')}] p${h.potions} g${Math.round(h.gold)}`).join('\n'));
 console.log('towers alive', w.towers.filter((t) => t.alive).map((t) => `${t.team ? 'R' : 'B'}${t.lane[0]}${t.tier}`).join(' '), 'cores', w.cores.map((c) => Math.round(c.hp)).join('/'));
