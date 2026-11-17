@@ -1,19 +1,5 @@
 [
  {
-  "id": "title",
-  "keys": [
-   "title"
-  ],
-  "params": {
-   "model": "gpt_image_2_6",
-   "quality": "medium",
-   "resolution": "2k",
-   "aspect_ratio": "16:9",
-   "output_format": "webp"
-  },
-  "prompt": "Key art background for a sci-fi fantasy action arena game title screen: a vast ruined futuristic city arena at dusk split into two sides, left side lit by glowing blue energy towers and right side lit by glowing red energy towers, a shattered plaza in the middle with floating debris and energy sparks, dramatic clouds, cinematic wide shot, stylized cel-shaded anime-inspired painting. Center area kept darker and uncluttered for a logo. No characters, no text, no logo."
- },
- {
   "id": "ground",
   "keys": [
    "ground"
